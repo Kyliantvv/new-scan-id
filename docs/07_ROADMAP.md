@@ -27,19 +27,40 @@ Chaque phase se termine par ses critères d'acceptation. On ne commence pas la s
 
 ## Phase 1 — MRZ de bout en bout + banc d'essai
 
+Découpée en deux tant que le Mac mini n'est pas disponible (décision du 2026-11-24, `DECISIONS.md`). Le helper Swift (`idvision`) doit être validé sur macOS avant la phase 1b.
+
+### Phase 1a — sous Windows, sans Apple Vision
+
 **Tâches**
-- Étapes A (ingestion), B (qualité), C (détection et recadrage), D (orientation).
-- Étape E complète : localisation, lectures Vision + Tesseract + PP-OCR, vote, formats (TD1, TD2, TD3, MRV-A, MRV-B, ancienne CNI française), sommes de contrôle, angles morts, réparation, noms.
-- Étape F (classification par la MRZ) et L minimal (statut à partir de la MRZ seule).
-- Tableau alimenté avec les champs MRZ ; détail d'un document avec la MRZ colorée.
-- `scripts/gen_mrz.py` (MRZ synthétiques + rendu OCR-B + dégradations) et `idreader bench` (sets `synthetic` et `golden`, rapport Markdown, `--compare`).
-- `idreader analyze --debug`.
+- Étapes E.3 à E.7 en fonctions pures : normalisation des lectures, vote, formats (TD1, TD2, TD3, MRV-A, MRV-B, ancienne CNI française), sommes de contrôle et classes indiscernables, réparation guidée, noms et translittération.
+- Étape A (ingestion des PDF et des images), étape B (qualité), étape C en version OpenCV seulement (détection, recadrage, redressement).
+- Localisation de la MRZ par le repli morphologique OpenCV (E.1) et prétraitements de la bande (E.2), nécessaires au banc.
+- `engines/tesseract.py` et `engines/ppocr.py`. Seuls `mrz.traineddata` et les modèles PP-OCR utiles à la MRZ sont téléchargés sous Windows (`fetch_models.py --pin`, empreintes montrées avant commit). Aucun modèle d'IA générative.
+- `scripts/gen_mrz.py` : MRZ synthétiques valides, rendues en police OCR-B (licence compatible, documentée) puis dégradées.
+- `idreader bench --set synthetic` : rapport JSON + Markdown, avec la liste des moteurs actifs.
+- Le pipeline fonctionne avec n'importe quel sous-ensemble des moteurs disponibles.
 
 **Critères d'acceptation**
-- Tests unitaires : vecteurs de `03_PIPELINE_ANALYSE.md` § E.8 et cas de réparation (dont un angle mort qui doit rester « À vérifier »).
+- Tests unitaires : vecteurs de `03_PIPELINE_ANALYSE.md` § E.8 et cas de réparation, dont un angle mort qui doit rester « À vérifier ».
+- Le banc synthétique tourne et produit son rapport. Son chiffre sert de **référence**, pas d'objectif.
+- Une page A4 avec recto et verso côte à côte donne deux recadrages avec la détection OpenCV.
+
+**Règle** : les résultats du banc sous Windows, sans Vision, ne sont pas représentatifs. Aucun poids ni seuil définitif n'est calibré dessus ; le rapport le dit.
+
+### Phase 1b — sur macOS
+
+**Tâches**
+- Validation du helper Swift (liste « À vérifier au premier lancement sur macOS » de `DECISIONS.md`).
+- Intégration d'Apple Vision : lecture de la MRZ, localisation E.1 par les lignes OCR, détection des documents (`detect_documents`), orientation (étape D).
+- Calibration des poids du vote, banc synthétique complet (trois moteurs), premier banc `golden`.
+- Étape F (classification par la MRZ) et L minimal (statut à partir de la MRZ seule).
+- Tableau alimenté avec les champs MRZ ; détail d'un document avec la MRZ colorée.
+- `idreader analyze --debug` ; `idreader bench --set golden` et `--compare`.
+
+**Critères d'acceptation**
 - Banc synthétique : MRZ entièrement correcte ≥ 98 % sur les images de qualité moyenne.
 - Premier banc `golden` (même petit, 30 à 50 vraies pièces) : résultats notés, **zéro erreur auto-validée**.
-- Une page A4 avec recto et verso côte à côte donne deux recadrages.
+- Une page A4 avec recto et verso côte à côte donne deux recadrages avec la chaîne complète (Vision + repli OpenCV).
 
 ---
 

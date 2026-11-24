@@ -21,6 +21,9 @@ Une ligne par décision. Les documents concernés sont mis à jour en même temp
 | 2026-11-24 | `IDR_COOKIE_SECURE` (vrai par défaut, faux seulement en test ou en développement local en http). | Le client de test HTTP n'envoie pas les cookies `Secure` en http. |
 | 2026-11-24 | Progression SSE : l'API interroge la table `jobs` toutes les secondes. | API et worker sont deux processus ; pas de bus de messages à maintenir. |
 | 2026-11-24 | Appariement (phase 4) : lancé quand tous les jobs du lot sont terminés et qu'aucun fichier n'a été ajouté depuis 2 minutes, ou par le bouton « Lancer l'appariement » ; relancé si de nouveaux fichiers arrivent. | Un lot reste ouvert : il faut un critère pour savoir quand apparier. |
+| 2026-11-24 | Phase 1 découpée : 1a sous Windows (E.3–E.7, A, B, C en OpenCV, Tesseract, PP-OCR, `gen_mrz.py`, banc synthétique), 1b sur macOS (Vision, calibration, banc complet et golden). | Le Mac mini n'est pas encore disponible ; avancer sur tout ce qui ne dépend pas d'Apple Vision. |
+| 2026-11-24 | Exception : sous Windows, téléchargement autorisé de `mrz.traineddata` et des seuls modèles PP-OCR utiles à la MRZ, via `fetch_models.py --pin`, empreintes montrées avant commit. Aucun modèle d'IA générative. | Nécessaire pour tester Tesseract et PP-OCR ; quelques dizaines de Mo. |
+| 2026-11-24 | Banc sous Windows sans Vision : chiffre de référence, pas d'objectif ; aucun poids ni seuil définitif calibré dessus. | Résultats non représentatifs du Mac mini (moteur n° 1 absent). |
 
 ## Choix non couverts par les docs (option la plus simple)
 
