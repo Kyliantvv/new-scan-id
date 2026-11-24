@@ -51,3 +51,38 @@ Une ligne par décision. Les documents concernés sont mis à jour en même temp
 À valider d'un coup sur le Mac, avant d'attaquer la phase 1.
 
 - [ ] Relevé de la machine dans `deploy/MACHINE.md` (`sw_vers`, `sysctl hw.memsize`, puce, disque, VM Lima).
+
+### Outils
+
+- [ ] Installer les outils (`deploy/MACHINE.md` § Installation) : Xcode Command Line Tools (Swift 6), Homebrew, `uv`, Node + pnpm (corepack), Tesseract, Caddy.
+- [ ] `uv sync` dans `backend/` avec le Python 3.12 géré par uv (la config Windows `python-preference = "only-system"` et `no-binary-package = ["mypy"]` ne doit pas être reprise sur le Mac).
+- [ ] `pytest.exe`/`mypy` lancés directement (`uv run pytest`, `uv run mypy src`) comme dans `CLAUDE.md`.
+
+### Helper Swift `idvision` (écrit sans compilateur sous Windows)
+
+- [ ] `swift build -c release --package-path vision-helper` compile sans avertissement en mode Swift 6 (concurrence stricte).
+- [ ] `swift test --package-path vision-helper` : tests `GeometryTests` et `DispatcherTests` (Swift Testing) passent.
+- [ ] Noms d'API de `RecognizeTextRequest` (macOS 15, framework Vision « Swift ») utilisés dans `AppleVisionBackend.swift`, à confirmer : `recognitionLevel`, `recognitionLanguages`, `usesLanguageCorrection`, `minimumTextHeightFraction`, `supportedRecognitionLanguages`, `revision`, `perform(on: CGImage)`, `observation.topCandidates(_:)`, `boundingBox`/`topLeft`…`bottomRight` en `NormalizedPoint` avec `.x`/`.y`.
+- [ ] Format des identifiants de langue renvoyés par `supportedRecognitionLanguages` (`fr-FR`, `zh-Hans`…) : le helper reconstruit `languageCode-script-region` ; vérifier que la liste de `idvision languages` est lisible et qu'une langue de cette liste est acceptée en entrée.
+- [ ] `String(describing: request.revision)` donne une valeur exploitable pour `recognize_text_revision` (sinon, choisir un autre champ).
+- [ ] Détection `#available(macOS 26, *)` pour `recognize_documents_available` : compile sur le SDK installé.
+- [ ] `JSONEncoder` : l'enveloppe aplatit bien la charge utile avec `id`, `ok`, `ms` (sortie d'une ligne par réponse, clés en snake_case).
+- [ ] ROI découpée par `CGImage.cropping(to:)` en pixels, origine en haut à gauche ; coordonnées renvoyées dans le repère de l'image entière (décalage ajouté).
+- [ ] `vision-helper/.build/release/idvision doctor` affiche la version de macOS, la révision de `RecognizeTextRequest` et les langues (critère d'acceptation de la phase 0).
+- [ ] `idvision serve` : une requête invalide renvoie une erreur JSON sans quitter ; stdin fermé = sortie propre ; rien d'autre que des identifiants et codes sur stderr.
+- [ ] `uv run pytest tests/unit/test_apple_vision_real.py` (passé à « skipped » sous Windows) : texte synthétique « IDREADER 2468 » retrouvé à ± 25 px, ROI respectée, `doctor` lu par le client Python.
+- [ ] Le worker journalise au démarrage la version du helper et le nombre de langues (`_log_helper_status`).
+
+### Backend et front
+
+- [ ] Suite complète `uv run pytest` sur macOS, dont `test_worker_kill.py` (SIGKILL réel du worker puis reprise).
+- [ ] `ImageFont.load_default(size=…)` de Pillow fonctionne (police intégrée, sans fichier système).
+- [ ] `pnpm --dir frontend install && pnpm --dir frontend build && pnpm --dir frontend test`.
+- [ ] Parcours dans Safari et Chrome : connexion, création de lot, dépôt de plusieurs fichiers, progression en direct, tableau vide en français (non fait sous Windows : le navigateur piloté n'a pas pu être connecté ; vérifié seulement par curl et les tests).
+- [ ] Onglet réseau du navigateur : aucune requête hors de l'origine (pas de Google Fonts, pas de CDN).
+
+### Plus tard (phase 1 et déploiement)
+
+- [ ] Vision dans un LaunchAgent (session utilisateur) : le helper fonctionne lancé par launchd, pas seulement depuis le Terminal.
+- [ ] Licence de `mrz.traineddata` et disponibilité des modèles PP-OCRv6 en ONNX ; `fetch_models.py --pin` puis relecture et commit des empreintes.
+- [ ] FileVault actif (`fdesetup status`) avant tout dépôt de vraie pièce.
