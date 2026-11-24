@@ -15,6 +15,7 @@ import json
 import logging
 import queue
 import subprocess
+import tempfile
 import threading
 from collections.abc import Sequence
 from pathlib import Path
@@ -22,7 +23,7 @@ from types import TracebackType
 from typing import IO, Any
 
 from idreader.core.config import Settings
-from idreader.engines.base import Candidate, OcrLevel, Quad, Roi, TextLine
+from idreader.engines.base import Candidate, ImageInput, OcrLevel, Quad, Roi, TextLine
 
 log = logging.getLogger(__name__)
 
@@ -244,12 +245,15 @@ class AppleVisionEngine:
 
     name = "vision"
 
-    def __init__(self, client: VisionHelperClient) -> None:
+    def __init__(self, client: VisionHelperClient, *, tmp_dir: Path | None = None) -> None:
         self.client = client
+        # Les tableaux sont écrits en PNG pour le helper : dans `tmp_dir` (sous data/,
+        # disque chiffré) en production.
+        self.tmp_dir = tmp_dir
 
     def recognize(
         self,
-        image: Path,
+        image: ImageInput,
         *,
         roi: Roi | None = None,
         languages: Sequence[str] = (),
@@ -258,9 +262,21 @@ class AppleVisionEngine:
     ) -> list[TextLine]:
         # language_correction toujours désactivée : elle « corrige » les noms propres
         # (docs/03_PIPELINE_ANALYSE.md § G).
-        response = self.client.recognize_text(
-            image, roi=roi, languages=languages, level=level, top_candidates=top_candidates
-        )
+        if isinstance(image, Path):
+            response = self.client.recognize_text(
+                image, roi=roi, languages=languages, level=level, top_candidates=top_candidates
+            )
+            return parse_lines(response, self.name)
+        import cv2  # import local : le client du helper n'en a pas besoin
+
+        with tempfile.TemporaryDirectory(dir=self.tmp_dir) as tmp:
+            path = Path(tmp) / "image.png"
+            bgr = image if image.ndim == 2 else cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+            if not cv2.imwrite(str(path), bgr):
+                raise HelperError("IMAGE_WRITE_FAILED")
+            response = self.client.recognize_text(
+                path, roi=roi, languages=languages, level=level, top_candidates=top_candidates
+            )
         return parse_lines(response, self.name)
 
 

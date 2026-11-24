@@ -58,6 +58,8 @@ class Settings(BaseSettings):
     idvision_timeout_seconds: float = 60.0
 
     tessdata_prefix: Path = Path("/opt/homebrew/share/tessdata")
+    models_dir: Path = REPO_ROOT / "models"  # rempli par scripts/fetch_models.py
+    tesseract_cmd: str = "tesseract"  # nom ou chemin du binaire Tesseract 5
     vlm_enabled: bool = False
     vlm_model: str = "mlx-community/PaddleOCR-VL-1.6-4bit"
 

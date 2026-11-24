@@ -82,7 +82,7 @@ files = ["src", "../scripts"]
 
 # CLAUDE.md : mypy --strict sur pipeline/ et engines/
 [[tool.mypy.overrides]]
-module = ["pypdfium2", "pypdfium2.*"]  # pas de py.typed
+module = ["pypdfium2", "pypdfium2.*", "onnxruntime", "onnxruntime.*"]  # pas de py.typed
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]

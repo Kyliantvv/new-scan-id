@@ -48,7 +48,11 @@ def run(*args: str) -> int:
 
 
 def test_repository_manifest_is_valid() -> None:
-    assert fm.load_manifest(REPO_ROOT / "scripts" / "models.toml") == []
+    # Chaque entrée du manifeste du dépôt est épinglée (empreinte relue avant commit).
+    for spec in fm.load_manifest(REPO_ROOT / "scripts" / "models.toml"):
+        assert len(spec.sha256) == 64, spec.name
+        assert spec.url.startswith("https://"), spec.name
+        assert spec.license, spec.name
 
 
 def test_fetch_downloads_verifies_and_writes_manifest(tmp_path: Path, source: Path) -> None:

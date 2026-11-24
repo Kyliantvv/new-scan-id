@@ -10,9 +10,14 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Literal, Protocol
 
+import numpy as np
+import numpy.typing as npt
 from pydantic import BaseModel, ConfigDict, Field
 
 OcrLevel = Literal["fast", "accurate"]
+# Fichier image, ou tableau RGB / niveaux de gris 8 bits (prétraitements de la bande MRZ).
+ImageArray = npt.NDArray[np.uint8]
+ImageInput = Path | ImageArray
 Point = tuple[float, float]
 
 
@@ -69,7 +74,7 @@ class OcrEngine(Protocol):
 
     def recognize(
         self,
-        image: Path,
+        image: ImageInput,
         *,
         roi: Roi | None = None,
         languages: Sequence[str] = (),
