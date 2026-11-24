@@ -206,7 +206,7 @@ class _Builder:
             if not partners or (pos not in self.changes_at and self.voted.vote_at(*pos).unanimous):
                 continue
             for p in sorted(partners):
-                swapped = [*chars[:k], p, *chars[k + 1:]]
+                swapped = [*chars[:k], p, *chars[k + 1 :]]
                 alt = "".join(swapped).replace(FILLER, "")
                 if (
                     f.name == "document_number"
