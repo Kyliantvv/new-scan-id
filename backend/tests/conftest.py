@@ -9,7 +9,7 @@ import pytest
 
 from idreader.core.config import Settings, get_settings
 
-TEST_SECRET = "test-secret-key-not-for-production"  # noqa: S105
+TEST_SECRET = "test-secret-key-not-for-production"
 
 
 @pytest.fixture
