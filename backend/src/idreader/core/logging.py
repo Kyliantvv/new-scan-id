@@ -28,6 +28,7 @@ def setup_logging(level: int = logging.INFO) -> None:
     root.setLevel(level)
     # httpx journalise les URL complètes (chaîne de requête comprise) au niveau INFO.
     logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("alembic").setLevel(logging.WARNING)  # contrôle du schéma au démarrage
 
 
 def log_exception_safely(logger: logging.Logger, exc: BaseException, context: str) -> None:

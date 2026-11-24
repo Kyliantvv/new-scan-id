@@ -29,3 +29,6 @@ vision-helper/.swiftpm/
 # Système
 .DS_Store
 Thumbs.db
+
+# Front : cache de tsc -b
+*.tsbuildinfo

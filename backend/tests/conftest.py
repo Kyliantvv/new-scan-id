@@ -22,6 +22,7 @@ def settings(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[Settin
     monkeypatch.setenv("IDR_DUMMY_JOB_SECONDS", "0")
     monkeypatch.setenv("IDR_SSE_POLL_SECONDS", "0.05")
     monkeypatch.setenv("IDR_IDVISION_PATH", str(tmp_path / "absent-idvision"))
+    monkeypatch.setenv("IDR_FRONTEND_DIST", str(tmp_path / "absent-dist"))
     get_settings.cache_clear()
     yield get_settings()
     get_settings.cache_clear()

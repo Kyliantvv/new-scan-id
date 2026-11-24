@@ -40,6 +40,11 @@ Une ligne par décision. Les documents concernés sont mis à jour en même temp
 | 2026-11-24 | Starlette place les fichiers déposés de plus de 1 Mo dans le dossier temporaire du système pendant la requête, puis les supprime. Accepté : même disque chiffré par FileVault. | Comportement standard de FastAPI/Starlette ; l'éviter demanderait un analyseur multipart maison. |
 | 2026-11-24 | Flux SSE limité à 30 min (`IDR_SSE_MAX_SECONDS`) avec `retry: 3000` ; le navigateur se reconnecte seul et reçoit l'état complet du lot à la reconnexion. Commentaire `ping` toutes les 15 s. | Borne les ressources côté serveur sans perte d'information. |
 | 2026-11-24 | `setup_logging` force le logger `httpx` au niveau WARNING. | httpx journalise les URL complètes, chaîne de requête comprise. |
+| 2026-11-24 | `setup_logging` force aussi le logger `alembic` au niveau WARNING. | Le contrôle de schéma au démarrage du worker remplissait le journal de lignes INFO inutiles. |
+| 2026-11-24 | `fetch_models.py` : bibliothèque standard seulement, schémas `https://` et `file://` (tests) ; destination relative sous `models/`, sans `..` ; fichier téléchargé dans un dossier temporaire sous `models/`, déplacé seulement si l'empreinte correspond ; `models/MANIFEST.json` liste les modèles installés et vérifiés. | Script lancé une fois, avant que l'environnement Python du projet n'existe forcément. |
+| 2026-11-24 | Front : React Router pour les pages (`/`, `/lots/:id`) ; envoi des fichiers un par un en `XMLHttpRequest` (3 en parallèle) pour afficher la progression d'envoi ; progression d'analyse par `EventSource`. | `fetch` ne donne pas la progression d'envoi ; un fichier par requête isole les refus. |
+| 2026-11-24 | AG Grid : thème Quartz avec la police de l'interface et `loadThemeGoogleFonts={false}` ; module `AllCommunityModule` complet (bundle ≈ 1,5 Mo, 450 Ko gzip). Découpage du bundle reporté. | Aucune requête vers Google Fonts (règle 1) ; taille acceptable sur le réseau local. |
+| 2026-11-24 | Tests : `IDR_FRONTEND_DIST` pointe vers un dossier absent par défaut, pour que les tests ne dépendent pas d'un build du front présent ou non. | Résultat des tests identique avec ou sans `frontend/dist`. |
 
 ## À vérifier au premier lancement sur macOS
 

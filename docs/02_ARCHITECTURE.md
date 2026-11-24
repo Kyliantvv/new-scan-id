@@ -222,12 +222,14 @@ HF_HUB_OFFLINE=1
 | FastAPI, Uvicorn, Pydantic | API | MIT / BSD |
 | SQLAlchemy, Alembic | base de données | MIT |
 | Typer | CLI | MIT |
+| httpx | client de test FastAPI (développement) | BSD-3 |
+| pytest, ruff, mypy | tests et qualité (développement) | MIT |
 | pydantic-settings | configuration (.env) | MIT |
 | python-multipart | upload multipart (FastAPI) | Apache-2.0 |
 | PyYAML | lecture de `reference/*.yaml` | MIT |
 | argon2-cffi | mots de passe | MIT |
 | opencv-python-headless | traitement d'image | Apache-2.0 (embarque FFmpeg en LGPL, bibliothèque dynamique non modifiée : exception acceptée, voir `DECISIONS.md`) |
-| Pillow | images | MIT-CMU |
+| Pillow | images (en phase 0 : images synthétiques des tests seulement) | MIT-CMU |
 | pypdfium2 | rendu PDF | Apache-2.0 / BSD |
 | rapidocr + onnxruntime | OCR PP-OCR | Apache-2.0 / MIT |
 | Modèles PP-OCRv6 / v5 | OCR | Apache-2.0 |
@@ -240,8 +242,10 @@ HF_HUB_OFFLINE=1
 | openpyxl | export XLSX | MIT |
 | mlx-vlm (option) | IA locale | MIT |
 | PaddleOCR-VL 1.6, Qwen3-VL-4B (option) | IA locale | Apache-2.0 |
-| React, Vite, Tailwind, TanStack Query | front | MIT |
-| AG Grid Community | tableau | MIT |
+| React, React Router, Vite, Tailwind, TanStack Query | front | MIT |
+| TypeScript | front (typage, développement) | Apache-2.0 |
+| Vitest | tests du front (développement) | MIT |
+| AG Grid Community, ag-grid-react, @ag-grid-community/locale | tableau, traduction française | MIT |
 | react-zoom-pan-pinch | zoom | MIT |
 | Caddy | reverse proxy TLS | Apache-2.0 |
 
