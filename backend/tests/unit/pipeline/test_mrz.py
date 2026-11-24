@@ -109,7 +109,7 @@ def test_td3_specimen() -> None:
     assert r.fields["document_number"].status is MrzFieldStatus.VALID
     assert r.fields["date_of_birth"].status is MrzFieldStatus.VALID
     # UTO (Utopie) est le code de spécimen ICAO, absent de la liste des pays
-    assert "MRZ_UNKNOWN_COUNTRY" in r.reasons
+    assert "MRZ_UNKNOWN_COUNTRY" not in r.reasons  # UTO : code des spécimens ICAO (motif SPECIMEN à l'étape L)
 
 
 def test_td1_specimen() -> None:

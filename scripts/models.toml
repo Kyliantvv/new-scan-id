@@ -42,3 +42,46 @@ url = "https://ctan.math.utah.edu/ctan/tex-archive/fonts/ocr-b-outline/opentype/
 sha256 = "6270b592af1cb319fe4122777d14fdbfc4a2edd111c6f87af3f4ac04c82ba48a"
 license = "Libre sans limitation (CTAN other-free : « freely use, modify, and/or distribute »)"
 dest = "fonts/ocrb10.otf"
+
+# Phase 2 (Windows, exception du 2026-11-25) : zone visuelle, détection + reconnaissance latines.
+# PP-OCRv6 medium (03_PIPELINE_ANALYSE.md § G), 139 Mo au total (limite 150 Mo).
+
+[[model]]
+name = "ppocrv6-medium-det"
+# PaddlePaddle/PP-OCRv6_medium_det_onnx, détection de lignes de texte (DB)
+url = "https://huggingface.co/PaddlePaddle/PP-OCRv6_medium_det_onnx/resolve/61323801669c338b7891481ec7bac61ce31b576a/inference.onnx"
+sha256 = "eb13b44b25bb36f89528b68720af8a61d9cf381176107f465db1757b65d086e1"
+license = "Apache-2.0"
+dest = "ppocr/v6_medium_det/inference.onnx"
+
+[[model]]
+name = "ppocrv6-medium-det-config"
+url = "https://huggingface.co/PaddlePaddle/PP-OCRv6_medium_det_onnx/resolve/61323801669c338b7891481ec7bac61ce31b576a/inference.yml"
+sha256 = "7298d5ead546584af2504d03355f881ac7a7bc0eb1e282d3e159277c1d0af871"
+license = "Apache-2.0"
+dest = "ppocr/v6_medium_det/inference.yml"
+
+[[model]]
+name = "ppocrv6-medium-rec"
+# PaddlePaddle/PP-OCRv6_medium_rec_onnx, reconnaissance (latin, chinois, japonais…)
+url = "https://huggingface.co/PaddlePaddle/PP-OCRv6_medium_rec_onnx/resolve/50c7eacafc52fa7bcf4194e8cd08e46f8558504b/inference.onnx"
+sha256 = "9c09abf0957f7968c7586464b7397b84ad2387a0497a351af40e9acc71b673ba"
+license = "Apache-2.0"
+dest = "ppocr/v6_medium_rec/inference.onnx"
+
+[[model]]
+name = "ppocrv6-medium-rec-config"
+url = "https://huggingface.co/PaddlePaddle/PP-OCRv6_medium_rec_onnx/resolve/50c7eacafc52fa7bcf4194e8cd08e46f8558504b/inference.yml"
+sha256 = "991b700facf5b50a7de193468207d5f4255b538dde0d312ae3b7c7a9b6873129"
+license = "Apache-2.0"
+dest = "ppocr/v6_medium_rec/inference.yml"
+
+[[model]]
+name = "font-roboto"
+# Police Roboto 3.008 (variable wdth/wght), google/fonts au dernier commit sous apache/
+# (METADATA.pb : license "APACHE2" ; passée en OFL au commit suivant, non utilisé ici).
+# Sert uniquement à rendre la zone visuelle des documents synthétiques (accents, tests).
+url = "https://raw.githubusercontent.com/google/fonts/4dd6e2b3f7e872f6ecc456a6eee31e39a02d06d8/apache/roboto/Roboto%5Bwdth%2Cwght%5D.ttf"
+sha256 = "d328ce17c6276aadcb15067cb5e45682393ce51eb492a394138e5edb01116374"
+license = "Apache-2.0"
+dest = "fonts/Roboto.ttf"

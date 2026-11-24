@@ -36,3 +36,48 @@ def doc_number_patterns() -> dict[tuple[str, str], re.Pattern[str]]:
             for code, pattern in by_code.items():
                 table[(str(state), str(code))] = re.compile(str(pattern))
     return table
+
+
+@lru_cache(maxsize=1)
+def country_scripts() -> dict[str, dict[str, list[str]]]:
+    """Pays (code MRZ) → {"vision": [préfixes de langues], "ppocr": [groupes de modèles]}."""
+    out: dict[str, dict[str, list[str]]] = {}
+    for state, entry in _load("country_scripts.yaml").items():
+        if isinstance(entry, dict):
+            out[str(state)] = {str(k): [str(x) for x in v] for k, v in entry.items()}
+    return out
+
+
+def country_languages(state: str) -> list[str]:
+    return list(country_scripts().get(state, {}).get("vision", []))
+
+
+@lru_cache(maxsize=1)
+def month_names() -> dict[str, dict[int, list[str]]]:
+    """Langue → {numéro du mois: [noms et abréviations]} (`reference/months.yaml`)."""
+    out: dict[str, dict[int, list[str]]] = {}
+    for lang, by_month in _load("months.yaml").items():
+        if isinstance(by_month, dict):
+            out[str(lang)] = {int(k): [str(x) for x in v] for k, v in by_month.items()}
+    return out
+
+
+@lru_cache(maxsize=1)
+def viz_labels() -> dict[str, list[str]]:
+    """Champ → libellés de la zone visuelle, toutes langues confondues (`viz_labels.yaml`)."""
+    out: dict[str, list[str]] = {}
+    for field, by_lang in _load("viz_labels.yaml").items():
+        if isinstance(by_lang, dict):
+            out[str(field)] = [str(x) for labels in by_lang.values() for x in labels]
+    return out
+
+
+@lru_cache(maxsize=1)
+def doc_code_overrides() -> dict[tuple[str, str], str]:
+    """(État, code de document à 2 caractères) → type (`reference/doc_codes.yaml`)."""
+    table: dict[tuple[str, str], str] = {}
+    for state, codes in _load("doc_codes.yaml").items():
+        if isinstance(codes, dict):
+            for code, doc_type in codes.items():
+                table[(str(state), str(code))] = str(doc_type)
+    return table

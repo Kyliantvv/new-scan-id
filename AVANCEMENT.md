@@ -10,7 +10,7 @@
 | 0 — Socle | fait sous Windows, à valider sur macOS | Helper Swift `idvision` écrit sans compilateur : à compiler et tester sur le Mac (liste dans `docs/DECISIONS.md`). |
 | 1a — MRZ sans Vision + banc synthétique | fait | Les trois critères sont atteints (2026-11-25). |
 | 1b — Vision, calibration, banc golden | à faire (Mac) | Demande macOS et de vraies pièces. |
-| 2 — Zone visuelle (G, H, L) | à faire | Prochaine étape sous Windows, sans Vision. |
+| 2 — Zone visuelle (G, H, L) | en cours sous Windows | G (PP-OCRv6 medium det+rec, fusion), H (MRZ guidée, libellés, dates multilingues), L (confiance, statuts, raisons, alertes), générateur UTO et `analyze_file` écrits ; **reste** : tests unitaires de G/H/L, banc `--set documents`, branchement dans le worker, DECISIONS. |
 | 3 — Vérification humaine et exports | à faire | |
 | 4 — Recto/verso, doublons, sans MRZ | à faire | Sans l'étape I (codes-barres, via Vision). |
 | 5 — Exploitation (`deploy/`) | à faire | Fichiers seulement, rien n'est exécuté sous Windows. |
@@ -24,6 +24,11 @@
 | synthétique, 300 cas, graine 2026 | 2026-11-25 | `7859b22` | ppocr | MRZ entièrement correcte 80,0 % · sommes valides 92,7 % · 0 erreur auto-validée · p50 225 ms | **non** (Windows, sans Vision ni Tesseract) |
 
 Rapport : `bench/results/2026-11-24_7859b22_synthetic.md` (date UTC dans le nom). Ces chiffres servent de référence pour suivre le code ; aucun poids ni seuil n'est calibré dessus.
+
+## Premier essai de la phase 2 (6 documents UTO, ppocr seul, non représentatif)
+
+- Passeports : 10 à 11 champs justes sur 11, accents compris dans la plupart des cas ; statut « À vérifier » à cause du sexe, de la nationalité et du pays lus par un seul moteur (attendu sans Vision).
+- Points à corriger repérés : un recadrage fantôme (pli bas de la page de scan) détecté en plus du document ; quelques accents perdus en qualité « poor » (`Û`→`Ú`) ; espaces perdus (`SANTALUCÍA`) ; la date de délivrance et l'autorité du verso ne sont pas encore rattachées au recto (attend l'appariement, phase 4).
 
 ## Ce qui reste bloqué, et pourquoi
 

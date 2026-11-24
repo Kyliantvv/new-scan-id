@@ -1,0 +1,9 @@
+# Surcharges du type de document selon le code MRZ (2 premiers caractères, `<` compris)
+# et le pays émetteur. Par défaut : P… passeport, V… visa, I…/A…/C… carte d'identité
+# (03_PIPELINE_ANALYSE.md § F). Types : passport, id_card, residence_permit, visa, travel_document.
+# Graine à enrichir à partir des spécimens (PRADO) et des corrections.
+
+FRA:
+  IR: residence_permit   # titre de séjour au format carte (TD1)
+D:
+  AR: residence_permit   # Aufenthaltstitel
