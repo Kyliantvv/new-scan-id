@@ -35,6 +35,11 @@ Une ligne par décision. Les documents concernés sont mis à jour en même temp
 | 2026-11-24 | Journal d'accès d'uvicorn désactivé, remplacé par un journal maison sans chaîne de requête ; exceptions inattendues journalisées sans leur message (type + pile) ; erreurs de validation renvoyées sans les valeurs reçues. | `?q=` peut contenir un nom ; les messages d'exception SQLAlchemy/Pydantic contiennent les valeurs. |
 | 2026-11-24 | `idreader serve` et `create-user` refusent de démarrer si la base n'est pas à la dernière révision Alembic (pas de migration automatique). | La migration reste une étape explicite (`deploy/install.sh`). |
 | 2026-11-24 | Tests : avertissements traités comme des erreurs, sauf l'avertissement de Starlette 1.x qui recommande `httpx2` pour `TestClient`. | `httpx` (BSD-3) fonctionne ; `httpx2` n'est pas encore évalué (licence, maturité). |
+| 2026-11-24 | Upload, phase 0 : PDF, JPEG, PNG reconnus par octets magiques ; HEIC, TIFF, WEBP, ZIP refusés (`UNSUPPORTED_FORMAT`) jusqu'à la phase 1. Un fichier refusé ne laisse ni ligne en base ni fichier sur disque. | Formats prioritaires de la spec ; les autres demandent idvision ou une décompression sûre. |
+| 2026-11-24 | Fichier identique (même SHA-256) dans le même lot : ligne `files` avec `duplicate_of_id`, pas de seconde copie sur disque, pas de job. Dans un autre lot, le fichier est traité normalement. | Minimisation des données ; la spec limite le doublon de fichier au lot. |
+| 2026-11-24 | Starlette place les fichiers déposés de plus de 1 Mo dans le dossier temporaire du système pendant la requête, puis les supprime. Accepté : même disque chiffré par FileVault. | Comportement standard de FastAPI/Starlette ; l'éviter demanderait un analyseur multipart maison. |
+| 2026-11-24 | Flux SSE limité à 30 min (`IDR_SSE_MAX_SECONDS`) avec `retry: 3000` ; le navigateur se reconnecte seul et reçoit l'état complet du lot à la reconnexion. Commentaire `ping` toutes les 15 s. | Borne les ressources côté serveur sans perte d'information. |
+| 2026-11-24 | `setup_logging` force le logger `httpx` au niveau WARNING. | httpx journalise les URL complètes, chaîne de requête comprise. |
 
 ## À vérifier au premier lancement sur macOS
 

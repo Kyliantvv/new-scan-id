@@ -26,6 +26,8 @@ def setup_logging(level: int = logging.INFO) -> None:
     handler._idreader = True  # type: ignore[attr-defined]
     root.addHandler(handler)
     root.setLevel(level)
+    # httpx journalise les URL complètes (chaîne de requête comprise) au niveau INFO.
+    logging.getLogger("httpx").setLevel(logging.WARNING)
 
 
 def log_exception_safely(logger: logging.Logger, exc: BaseException, context: str) -> None:
