@@ -84,3 +84,32 @@ def serve() -> None:
     host, _, port = settings.bind.rpartition(":")
     # access_log=False : le journal d'accès d'uvicorn contient la chaîne de requête.
     uvicorn.run(create_app(settings), host=host, port=int(port), access_log=False, log_config=None)
+
+
+@app.command()
+def worker(
+    exit_when_idle: Annotated[
+        bool, typer.Option("--exit-when-idle", help="S'arrêter quand la file est vide")
+    ] = False,
+) -> None:
+    """Lance le worker d'analyse (un processus ; reprend les jobs abandonnés)."""
+    import signal
+
+    from idreader.core.db import make_engine
+    from idreader.worker.main import Worker
+
+    setup_logging()
+    settings = get_settings()
+    _require_schema(settings)
+    engine = make_engine(settings)
+    w = Worker(settings, engine)
+
+    def _stop(_signum: int, _frame: object) -> None:
+        w.stop()  # termine le job en cours puis s'arrête
+
+    signal.signal(signal.SIGINT, _stop)
+    signal.signal(signal.SIGTERM, _stop)
+    try:
+        w.run(exit_when_idle=exit_when_idle)
+    finally:
+        engine.dispose()
