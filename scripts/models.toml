@@ -7,19 +7,38 @@
 # - `--verify` refuse tout écart ; un modèle sans empreinte n'est jamais installé ;
 # - licence vérifiée au moment de l'ajout et reportée dans docs/02_ARCHITECTURE.md.
 #
-# Phase 0 : aucun modèle. Les entrées ci-dessous seront activées en phase 1, sur le Mac
-# (vérification de la licence de mrz.traineddata et des modèles PP-OCRv6, docs/DECISIONS.md).
-#
-# [[model]]
-# name = "tesseract-mrz"
-# url = "https://…/mrz.traineddata"
-# sha256 = ""
-# license = "BSD-3-Clause (à revérifier)"
-# dest = "tesseract/mrz.traineddata"
-#
-# [[model]]
-# name = "ppocrv6-latin-rec"
-# url = "https://huggingface.co/PaddlePaddle/…/resolve/<commit>/….onnx"   # URL figée sur un commit
-# sha256 = ""
-# license = "Apache-2.0"
-# dest = "ppocr/v6/latin_rec.onnx"
+# Phase 1a (Windows, exception du 2026-11-24) : seulement ce qui sert à la MRZ.
+# Aucun modèle d'IA générative.
+
+[[model]]
+name = "tesseract-mrz"
+# DoubangoTelecom/tesseractMRZ, dépôt archivé, URL figée sur le dernier commit
+url = "https://raw.githubusercontent.com/DoubangoTelecom/tesseractMRZ/1e7adfecda5f3c9ae1fb12cf6b4b8c3958c63e46/tessdata_best/mrz.traineddata"
+sha256 = "e44f5b7a6bdd3f382ef3bfa84ee0057f5897946a84a094c26910e0a124f3a9bd"
+license = "BSD-3-Clause (Copyright (c) 2019, DoubangoTelecom)"
+dest = "tesseract/mrz.traineddata"
+
+[[model]]
+name = "ppocrv6-small-rec"
+# PaddlePaddle/PP-OCRv6_small_rec_onnx, reconnaissance seule (50 langues dont l'anglais)
+url = "https://huggingface.co/PaddlePaddle/PP-OCRv6_small_rec_onnx/resolve/b8f84f0b80c529de40b4fbb3544b84fa7233a513/inference.onnx"
+sha256 = "5435fd747c9e0efe15a96d0b378d5bd157e9492ed8fd80edf08f30d02fa24634"
+license = "Apache-2.0"
+dest = "ppocr/v6_small_rec/inference.onnx"
+
+[[model]]
+name = "ppocrv6-small-rec-config"
+# dictionnaire de caractères (PostProcess.character_dict) et prétraitement
+url = "https://huggingface.co/PaddlePaddle/PP-OCRv6_small_rec_onnx/resolve/b8f84f0b80c529de40b4fbb3544b84fa7233a513/inference.yml"
+sha256 = "ab078671bb49f06228eadccd34f1bb501e157f7a047095ffb943ba81512c77d1"
+license = "Apache-2.0"
+dest = "ppocr/v6_small_rec/inference.yml"
+
+[[model]]
+name = "font-ocrb"
+# Police OCR-B (Norbert Schwarz, contours de Zdeněk Wagner), CTAN fonts/ocr-b-outline.
+# Sert uniquement à fabriquer les images synthétiques (scripts/gen_mrz.py, tests).
+url = "https://ctan.math.utah.edu/ctan/tex-archive/fonts/ocr-b-outline/opentype/ocrb10.otf"   # miroir fixe : le redirecteur CTAN choisit un miroir au hasard
+sha256 = "6270b592af1cb319fe4122777d14fdbfc4a2edd111c6f87af3f4ac04c82ba48a"
+license = "Libre sans limitation (CTAN other-free : « freely use, modify, and/or distribute »)"
+dest = "fonts/ocrb10.otf"
