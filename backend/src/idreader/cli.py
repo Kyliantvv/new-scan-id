@@ -86,6 +86,27 @@ def serve() -> None:
     uvicorn.run(create_app(settings), host=host, port=int(port), access_log=False, log_config=None)
 
 
+def _log_helper_status(settings: Settings) -> None:
+    """`idvision doctor` au démarrage du worker (docs/02_ARCHITECTURE.md § Helper Swift)."""
+    import logging
+
+    from idreader.engines.apple_vision import probe_helper
+
+    log = logging.getLogger("idreader.worker")
+    info = probe_helper(settings)
+    if info is None:
+        log.warning("idvision indisponible : moteur Apple Vision désactivé")
+        return
+    langs = info.get("languages", {})
+    log.info(
+        "idvision ok version=%s macos=%s revision=%s languages_accurate=%d",
+        info.get("version"),
+        ".".join(str(v) for v in info.get("macos_version", [])),
+        info.get("recognize_text_revision"),
+        len(langs.get("accurate", [])),
+    )
+
+
 @app.command()
 def worker(
     exit_when_idle: Annotated[
@@ -101,6 +122,7 @@ def worker(
     setup_logging()
     settings = get_settings()
     _require_schema(settings)
+    _log_helper_status(settings)
     engine = make_engine(settings)
     w = Worker(settings, engine)
 
