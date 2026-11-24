@@ -1,0 +1,25 @@
+# Manifeste des modèles téléchargés par `scripts/fetch_models.py`.
+#
+# Règles :
+# - une entrée [[model]] par fichier : name, url (https://), sha256, license, dest (sous models/) ;
+# - l'empreinte s'obtient avec `python scripts/fetch_models.py --pin <name>`, puis se relit
+#   (comparaison avec l'empreinte publiée par l'auteur quand elle existe) et se commite ;
+# - `--verify` refuse tout écart ; un modèle sans empreinte n'est jamais installé ;
+# - licence vérifiée au moment de l'ajout et reportée dans docs/02_ARCHITECTURE.md.
+#
+# Phase 0 : aucun modèle. Les entrées ci-dessous seront activées en phase 1, sur le Mac
+# (vérification de la licence de mrz.traineddata et des modèles PP-OCRv6, docs/DECISIONS.md).
+#
+# [[model]]
+# name = "tesseract-mrz"
+# url = "https://…/mrz.traineddata"
+# sha256 = ""
+# license = "BSD-3-Clause (à revérifier)"
+# dest = "tesseract/mrz.traineddata"
+#
+# [[model]]
+# name = "ppocrv6-latin-rec"
+# url = "https://huggingface.co/PaddlePaddle/…/resolve/<commit>/….onnx"   # URL figée sur un commit
+# sha256 = ""
+# license = "Apache-2.0"
+# dest = "ppocr/v6/latin_rec.onnx"
