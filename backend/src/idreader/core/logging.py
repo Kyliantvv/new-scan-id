@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import logging
 import sys
+import traceback
+from pathlib import Path
 
 LOG_FORMAT = "%(asctime)s %(levelname)s %(name)s %(message)s"
 
@@ -24,3 +26,14 @@ def setup_logging(level: int = logging.INFO) -> None:
     handler._idreader = True  # type: ignore[attr-defined]
     root.addHandler(handler)
     root.setLevel(level)
+
+
+def log_exception_safely(logger: logging.Logger, exc: BaseException, context: str) -> None:
+    """Journalise une exception sans son message.
+
+    Les messages d'exception peuvent contenir des données personnelles (paramètres SQL,
+    valeurs Pydantic…) : on ne garde que le type et la pile (fichier, ligne, fonction).
+    """
+    frames = traceback.extract_tb(exc.__traceback__)[-5:]
+    where = " < ".join(f"{Path(f.filename).name}:{f.lineno}:{f.name}" for f in reversed(frames))
+    logger.error("%s exception=%s at=%s", context, type(exc).__name__, where)

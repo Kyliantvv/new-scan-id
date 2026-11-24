@@ -25,3 +25,59 @@ def settings(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[Settin
     get_settings.cache_clear()
     yield get_settings()
     get_settings.cache_clear()
+
+
+PASSWORD = "motdepasse-de-test-123"
+
+
+@pytest.fixture
+def migrated(settings: Settings) -> Settings:
+    from idreader.core.migrate import upgrade_head
+
+    upgrade_head(settings)
+    return settings
+
+
+@pytest.fixture
+def app(migrated: Settings):
+    from idreader.api.app import create_app
+
+    application = create_app(migrated)
+    yield application
+    application.state.engine.dispose()
+
+
+@pytest.fixture
+def client(app):
+    from fastapi.testclient import TestClient
+
+    with TestClient(app) as c:
+        yield c
+
+
+def make_user(app, email: str = "operateur@exemple.fr", *, admin: bool = False) -> str:
+    from idreader.core.models import Role
+    from idreader.core.security import create_user
+
+    with app.state.session_factory() as db:
+        user = create_user(
+            db, email, PASSWORD, Role.ADMIN if admin else Role.OPERATOR, app.state.settings
+        )
+        db.commit()
+        return user.id
+
+
+def login(client, email: str = "operateur@exemple.fr") -> str:
+    """Connecte le client et renvoie le jeton CSRF ; le pose aussi en en-tête par défaut."""
+    r = client.post("/api/auth/login", json={"email": email, "password": PASSWORD})
+    assert r.status_code == 200, r.text
+    csrf = r.json()["csrf_token"]
+    client.headers["X-CSRF-Token"] = csrf
+    return csrf
+
+
+@pytest.fixture
+def operator_client(app, client):
+    make_user(app)
+    login(client)
+    return client

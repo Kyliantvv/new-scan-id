@@ -26,3 +26,20 @@ def upgrade_head(settings: Settings) -> None:
             command.upgrade(cfg, "head")
     finally:
         engine.dispose()
+
+
+def schema_is_current(settings: Settings) -> bool:
+    """Vrai si la base est à la dernière révision Alembic."""
+    from alembic.runtime.migration import MigrationContext
+    from alembic.script import ScriptDirectory
+
+    from idreader.core.db import make_engine
+
+    head = ScriptDirectory.from_config(alembic_config()).get_current_head()
+    engine = make_engine(settings)
+    try:
+        with engine.connect() as conn:
+            current = MigrationContext.configure(conn).get_current_revision()
+    finally:
+        engine.dispose()
+    return current == head

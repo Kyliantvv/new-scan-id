@@ -79,8 +79,15 @@ def make_engine(settings: Settings) -> Engine:
     return engine
 
 
-def make_session_factory(engine: Engine) -> sessionmaker[Session]:
-    return sessionmaker(bind=engine, expire_on_commit=False)
+def make_session_factory(engine: Engine, *, immediate: bool = True) -> sessionmaker[Session]:
+    """Fabrique de sessions ORM.
+
+    Par défaut `BEGIN IMMEDIATE` : en WAL, une transaction différée qui lit puis écrit échoue
+    sans attendre (SQLITE_BUSY) si un autre processus a écrit entre-temps (docs/DECISIONS.md).
+    Garder ces transactions courtes. `immediate=False` pour les lectures seules (SSE).
+    """
+    bind = engine.execution_options(sqlite_begin="IMMEDIATE") if immediate else engine
+    return sessionmaker(bind=bind, expire_on_commit=False)
 
 
 @contextmanager
