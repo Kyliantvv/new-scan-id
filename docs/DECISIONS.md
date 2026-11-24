@@ -26,6 +26,7 @@ Une ligne par décision. Les documents concernés sont mis à jour en même temp
 
 | Date | Décision | Raison |
 |---|---|---|
+| 2026-11-24 | Poste Windows : Python 3.12.10 officiel (python.org, installé par `winget --scope user`) au lieu du Python géré par uv ; config utilisateur `%APPDATA%\uv\uv.toml` (`python-preference = "only-system"`, `no-binary-package = ["mypy"]`) ; lancer les outils par `uv run python -m pytest` / `uv run python -m mypy`. Rien de tout cela n'est dans le dépôt. | La stratégie de contrôle d'applications de Windows bloque les exécutables non signés : `python.exe` des venv uv, les lanceurs `pytest.exe`, les DLL mypyc de mypy. Sans objet sur macOS. |
 
 ## À vérifier au premier lancement sur macOS
 
