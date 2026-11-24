@@ -13,6 +13,15 @@ dependencies = [
     "typer>=0.13",
     "argon2-cffi>=23.1",
     "python-multipart>=0.0.18",
+    "numpy>=2",
+    "opencv-python-headless>=4.10",
+    "pypdfium2>=4.30",
+    "pillow>=11",
+    "pyyaml>=6",
+    "iso3166>=2.1",
+    "anyascii>=0.3",
+    "rapidfuzz>=3.9",
+    "onnxruntime>=1.20",
 ]
 
 [project.scripts]
@@ -25,6 +34,7 @@ dev = [
     "ruff>=0.8",
     "mypy>=1.13",
     "pillow>=11",
+    "types-pyyaml>=6.0.12.20261122",
 ]
 
 [build-system]

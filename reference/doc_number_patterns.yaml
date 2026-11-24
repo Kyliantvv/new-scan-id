@@ -1,0 +1,8 @@
+# Motifs de numéro de document par État émetteur (code MRZ) et première lettre du code
+# de document (P, I, A, C, V). Expressions régulières sur le numéro sans remplissage.
+# Servent à départager les angles morts du n° de document (03_PIPELINE_ANALYSE.md § E.6.6)
+# et à l'alerte « motif de numéro inhabituel ». À enrichir selon les statistiques réelles,
+# uniquement à partir de sources publiques (spécimens, descriptions PRADO).
+
+FRA:
+  P: '^\d{2}[A-Z]{2}\d{5}$'   # passeport français

@@ -61,11 +61,15 @@ pipeline/
   mrz/
     locate.py      # E.1 — localisation de la bande MRZ
     read.py        # E.2 — lectures multi-moteurs × prétraitements
+    normalize.py   # E.2 — normalisation d'une lecture (chevrons, accents, K de remplissage, réalignement)
     vote.py        # E.3 — alignement et vote par caractère
     formats.py     # E.4 — TD1, TD2, TD3, MRV-A, MRV-B, FRA ancienne CNI
     checkdigit.py  # E.5 — sommes de contrôle et classes indiscernables
     repair.py      # E.6 — réparation guidée par les sommes de contrôle
     names.py       # E.7 — noms, troncature, translittération ICAO
+    decode.py      # E.4→E.7 assemblés : champs, statuts, preuves, contrôles sémantiques
+    synth.py       # MRZ synthétiques valides (tests, scripts/gen_mrz.py)
+  reference.py     # chargement de reference/*.yaml
   classify.py      # F — type de document et pays
   viz_ocr.py       # G — OCR de la zone visuelle, fusion des moteurs
   extract.py       # H — extraction des champs (guidée par la MRZ, libellés, gabarits)
@@ -226,7 +230,8 @@ HF_HUB_OFFLINE=1
 | pytest, ruff, mypy | tests et qualité (développement) | MIT |
 | pydantic-settings | configuration (.env) | MIT |
 | python-multipart | upload multipart (FastAPI) | Apache-2.0 |
-| PyYAML | lecture de `reference/*.yaml` | MIT |
+| PyYAML (+ types-PyYAML en développement) | lecture de `reference/*.yaml` | MIT / Apache-2.0 |
+| NumPy | tableaux d'images | BSD-3 (parties 0BSD, MIT, Zlib, CC0 : permissives) |
 | argon2-cffi | mots de passe | MIT |
 | opencv-python-headless | traitement d'image | Apache-2.0 (embarque FFmpeg en LGPL, bibliothèque dynamique non modifiée : exception acceptée, voir `DECISIONS.md`) |
 | Pillow | images (en phase 0 : images synthétiques des tests seulement) | MIT-CMU |
