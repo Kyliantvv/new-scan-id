@@ -372,6 +372,14 @@ def markdown(p: dict[str, Any], baseline: dict[str, Any] | None = None) -> str:
         f"`repaired` avec une confiance ≥ {p['auto_validate_threshold']:.2f}.".replace(".", ",", 1),
         "",
     ]
+    if len(env["engines_active"]) < 2:
+        out += [
+            "Avec un seul moteur actif, aucune lecture ne peut confirmer un caractère d'une classe "
+            "indiscernable (angle mort, § E.5) : l'automatisation est nulle par construction et "
+            "le motif `MRZ_BLIND_SPOT` domine. C'est le comportement voulu (« À vérifier » plutôt "
+            "qu'une erreur validée).",
+            "",
+        ]
     if s["silent_errors"]:
         out += ["### Erreurs auto-validées", "", *[f"- `{c}`" for c in s["silent_errors"]], ""]
     for title, key in (("Par qualité d'image", "by_quality"), ("Par format", "by_format")):
