@@ -1,0 +1,22 @@
+# Codes de 3 lettres utilisables en MRZ (État émetteur / nationalité) qui ne sont pas
+# de simples codes ISO 3166-1 alpha-3. Source : ICAO Doc 9303 partie 3.
+# La liste ISO 3166-1 alpha-3 complète vient de la bibliothèque `iso3166`.
+# À compléter avec la liste officielle à jour (organisations internationales notamment).
+
+D: "Allemagne (code MRZ, écrit D<< sur 3 positions)"
+GBD: "Royaume-Uni — British Overseas Territories Citizen"
+GBN: "Royaume-Uni — British National (Overseas)"
+GBO: "Royaume-Uni — British Overseas Citizen"
+GBP: "Royaume-Uni — British Protected Person"
+GBS: "Royaume-Uni — British Subject"
+UNO: "Organisation des Nations unies (fonctionnaire)"
+UNA: "Institution spécialisée des Nations unies (fonctionnaire)"
+UNK: "Résident du Kosovo (document de la MINUK)"
+XXA: "Apatride (convention de 1954)"
+XXB: "Réfugié (convention de 1951)"
+XXC: "Réfugié (autre définition)"
+XXX: "Nationalité non précisée"
+EUE: "Union européenne (laissez-passer)"
+XOM: "Ordre souverain de Malte"
+XPO: "Interpol"
+RKS: "Kosovo (code en usage sur ses documents ; absent de la norme ISO)"

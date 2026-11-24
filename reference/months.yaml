@@ -1,0 +1,29 @@
+# Abréviations et noms de mois rencontrés dans les zones visuelles.
+# Clé = numéro du mois. Comparaison insensible à la casse et aux accents.
+# Les passeports impriment souvent deux formes séparées par "/" : "12 AVR/APR 1990".
+# Graine à enrichir avec les spécimens et les corrections.
+
+fr: {1: [JANV, JAN, JANVIER], 2: [FÉVR, FEVR, FÉV, FEV, FÉVRIER], 3: [MARS, MAR], 4: [AVR, AVRIL],
+     5: [MAI], 6: [JUIN], 7: [JUIL, JUILLET], 8: [AOÛT, AOUT, AOÛ, AOU], 9: [SEPT, SEP, SEPTEMBRE],
+     10: [OCT, OCTOBRE], 11: [NOV, NOVEMBRE], 12: [DÉC, DEC, DÉCEMBRE]}
+en: {1: [JAN, JANUARY], 2: [FEB, FEBRUARY], 3: [MAR, MARCH], 4: [APR, APRIL], 5: [MAY], 6: [JUN, JUNE],
+     7: [JUL, JULY], 8: [AUG, AUGUST], 9: [SEP, SEPT, SEPTEMBER], 10: [OCT, OCTOBER], 11: [NOV, NOVEMBER],
+     12: [DEC, DECEMBER]}
+es: {1: [ENE, ENERO], 2: [FEB, FEBRERO], 3: [MAR, MARZO], 4: [ABR, ABRIL], 5: [MAY, MAYO], 6: [JUN, JUNIO],
+     7: [JUL, JULIO], 8: [AGO, AGOSTO], 9: [SEP, SEPT, SET, SEPTIEMBRE], 10: [OCT, OCTUBRE],
+     11: [NOV, NOVIEMBRE], 12: [DIC, DICIEMBRE]}
+de: {1: [JAN, JÄN, JANUAR], 2: [FEB, FEBRUAR], 3: [MÄR, MAR, MRZ, MÄRZ], 4: [APR, APRIL], 5: [MAI],
+     6: [JUN, JUNI], 7: [JUL, JULI], 8: [AUG, AUGUST], 9: [SEP, SEPT, SEPTEMBER], 10: [OKT, OKTOBER],
+     11: [NOV, NOVEMBER], 12: [DEZ, DEZEMBER]}
+it: {1: [GEN, GENNAIO], 2: [FEB, FEBBRAIO], 3: [MAR, MARZO], 4: [APR, APRILE], 5: [MAG, MAGGIO],
+     6: [GIU, GIUGNO], 7: [LUG, LUGLIO], 8: [AGO, AGOSTO], 9: [SET, SETTEMBRE], 10: [OTT, OTTOBRE],
+     11: [NOV, NOVEMBRE], 12: [DIC, DICEMBRE]}
+pt: {1: [JAN, JANEIRO], 2: [FEV, FEVEREIRO], 3: [MAR, MARÇO, MARCO], 4: [ABR, ABRIL], 5: [MAI, MAIO],
+     6: [JUN, JUNHO], 7: [JUL, JULHO], 8: [AGO, AGOSTO], 9: [SET, SETEMBRO], 10: [OUT, OUTUBRO],
+     11: [NOV, NOVEMBRO], 12: [DEZ, DEZEMBRO]}
+nl: {1: [JAN, JANUARI], 2: [FEB, FEBRUARI], 3: [MRT, MAA, MAART], 4: [APR, APRIL], 5: [MEI], 6: [JUN, JUNI],
+     7: [JUL, JULI], 8: [AUG, AUGUSTUS], 9: [SEP, SEPT, SEPTEMBER], 10: [OKT, OKTOBER],
+     11: [NOV, NOVEMBER], 12: [DEC, DECEMBER]}
+tr: {1: [OCA, OCAK], 2: [ŞUB, SUB, ŞUBAT], 3: [MAR, MART], 4: [NİS, NIS, NİSAN], 5: [MAY, MAYIS],
+     6: [HAZ, HAZİRAN], 7: [TEM, TEMMUZ], 8: [AĞU, AGU, AĞUSTOS], 9: [EYL, EYLÜL], 10: [EKİ, EKI, EKİM],
+     11: [KAS, KASIM], 12: [ARA, ARALIK]}

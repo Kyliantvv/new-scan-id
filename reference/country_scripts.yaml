@@ -1,0 +1,57 @@
+# Langues à passer à l'OCR de la zone visuelle selon le pays émetteur (code MRZ).
+# Graine pour les pays les plus probables ; à compléter selon les statistiques réelles.
+# - vision : préfixes de langues pour Apple Vision (croisés au démarrage avec `idvision languages`)
+# - ppocr  : groupe de modèle PP-OCR (latin|cjk|cyrillic|arabic|greek|korean|thai|devanagari)
+# Toujours ajouter en, fr, es (libellés des passeports) côté Vision.
+# Pays absent de la liste : vision [en, fr, es], ppocr latin, et on s'appuie surtout sur la MRZ.
+
+FRA: {vision: [fr], ppocr: [latin]}
+BEL: {vision: [fr, nl, de], ppocr: [latin]}
+CHE: {vision: [de, fr, it], ppocr: [latin]}
+LUX: {vision: [fr, de], ppocr: [latin]}
+D:   {vision: [de], ppocr: [latin]}
+AUT: {vision: [de], ppocr: [latin]}
+ESP: {vision: [es], ppocr: [latin]}
+PRT: {vision: [pt], ppocr: [latin]}
+ITA: {vision: [it], ppocr: [latin]}
+NLD: {vision: [nl], ppocr: [latin]}
+GBR: {vision: [en], ppocr: [latin]}
+IRL: {vision: [en], ppocr: [latin]}
+POL: {vision: [pl], ppocr: [latin]}
+ROU: {vision: [ro], ppocr: [latin]}
+CZE: {vision: [cs], ppocr: [latin]}
+SWE: {vision: [sv], ppocr: [latin]}
+NOR: {vision: [nb, "no"], ppocr: [latin]}   # "no" entre guillemets : sinon YAML le lit comme un booléen
+DNK: {vision: [da], ppocr: [latin]}
+FIN: {vision: [fi], ppocr: [latin]}
+GRC: {vision: [el], ppocr: [greek]}
+BGR: {vision: [bg, ru], ppocr: [cyrillic]}
+SRB: {vision: [sr, ru], ppocr: [cyrillic, latin]}
+TUR: {vision: [tr], ppocr: [latin]}
+RUS: {vision: [ru], ppocr: [cyrillic]}
+UKR: {vision: [uk, ru], ppocr: [cyrillic]}
+BLR: {vision: [ru], ppocr: [cyrillic]}
+USA: {vision: [en], ppocr: [latin]}
+CAN: {vision: [en, fr], ppocr: [latin]}
+MEX: {vision: [es], ppocr: [latin]}
+BRA: {vision: [pt], ppocr: [latin]}
+ARG: {vision: [es], ppocr: [latin]}
+COL: {vision: [es], ppocr: [latin]}
+MAR: {vision: [ar, fr], ppocr: [arabic, latin]}
+DZA: {vision: [ar, fr], ppocr: [arabic, latin]}
+TUN: {vision: [ar, fr], ppocr: [arabic, latin]}
+EGY: {vision: [ar], ppocr: [arabic]}
+SAU: {vision: [ar], ppocr: [arabic]}
+ARE: {vision: [ar], ppocr: [arabic]}
+SEN: {vision: [fr], ppocr: [latin]}
+CIV: {vision: [fr], ppocr: [latin]}
+CMR: {vision: [fr, en], ppocr: [latin]}
+MLI: {vision: [fr], ppocr: [latin]}
+CHN: {vision: [zh-Hans], ppocr: [cjk]}
+TWN: {vision: [zh-Hant], ppocr: [cjk]}
+HKG: {vision: [zh-Hant], ppocr: [cjk]}
+JPN: {vision: [ja], ppocr: [cjk]}
+KOR: {vision: [ko], ppocr: [korean]}
+THA: {vision: [th], ppocr: [thai]}
+VNM: {vision: [vi], ppocr: [latin]}
+IND: {vision: [hi], ppocr: [devanagari, latin]}

@@ -1,0 +1,9 @@
+# Fins de ligne LF partout : le code part sur macOS.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.pdf binary
+*.heic binary
+*.traineddata binary
+*.onnx binary
