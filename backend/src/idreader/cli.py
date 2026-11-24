@@ -135,3 +135,40 @@ def worker(
         w.run(exit_when_idle=exit_when_idle)
     finally:
         engine.dispose()
+
+
+@app.command()
+def bench(
+    set_name: Annotated[
+        str, typer.Option("--set", help="Jeu : synthetic (golden en phase 1b)")
+    ] = "synthetic",
+    count: Annotated[int, typer.Option(help="Nombre de cas synthétiques")] = 300,
+    seed: Annotated[int, typer.Option(help="Graine du générateur")] = 2026,
+    engines: Annotated[
+        str, typer.Option(help="Moteurs (séparés par des virgules), défaut : tous les disponibles")
+    ] = "",
+    compare: Annotated[
+        bool, typer.Option("--compare/--no-compare", help="Écart avec le dernier résultat")
+    ] = True,
+) -> None:
+    """Banc d'essai de l'étape E (MRZ). Rapport dans bench/results/."""
+    from idreader.bench.runner import bench_synthetic
+    from idreader.engines.registry import available_engines
+
+    settings = get_settings()
+    if set_name != "synthetic":
+        typer.echo("Seul le jeu « synthetic » existe en phase 1a.", err=True)
+        raise typer.Exit(2)
+    only = [e.strip() for e in engines.split(",") if e.strip()] or None
+    active = available_engines(settings, only)
+    typer.echo(f"Moteurs actifs : {', '.join(e.name for e in active) or 'aucun'}")
+    _, md_path, payload = bench_synthetic(settings, active, count=count, seed=seed, compare=compare)
+    s = payload["summary"]
+    typer.echo(
+        f"MRZ entièrement correcte : {s['mrz_exact_pct']} % · auto-validation : "
+        f"{s['automation_pct']} % (précision {s['auto_precision_pct']} %) · "
+        f"erreurs auto-validées : {len(s['silent_errors'])}"
+    )
+    if payload["warning"]:
+        typer.echo("ATTENTION : résultats non représentatifs (voir le rapport).")
+    typer.echo(f"Rapport : {md_path}")

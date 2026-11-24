@@ -50,8 +50,9 @@ core/
 engines/
   base.py          # Protocol OcrEngine, TextLine, Quad, Candidate
   apple_vision.py  # client du processus idvision (JSON lines)
-  ppocr.py         # RapidOCR, choix du modèle selon l'écriture
-  tesseract.py     # Tesseract MRZ (sous-processus)
+  ppocr.py         # PP-OCR (ONNX Runtime) ; phase 1a : reconnaissance seule, ligne par ligne (MRZ)
+  tesseract.py     # Tesseract MRZ (sous-processus, PNG sur stdin, sortie TSV)
+  registry.py      # moteurs disponibles sur la machine (n'importe quel sous-ensemble)
   vlm.py           # [option] mlx-vlm, chargement paresseux, déchargement après inactivité
 pipeline/
   ingest.py        # A — PDF → pages, images → RGB, EXIF, HEIC (via idvision), empreinte
@@ -59,7 +60,7 @@ pipeline/
   detect.py        # C — détection et recadrage des documents
   orient.py        # D — orientation 0/90/180/270 + redressement fin
   mrz/
-    locate.py      # E.1 — localisation de la bande MRZ
+    locate.py      # E.1 — localisation de la bande MRZ (repli morphologique), lignes, redressement fin
     read.py        # E.2 — lectures multi-moteurs × prétraitements
     normalize.py   # E.2 — normalisation d'une lecture (chevrons, accents, K de remplissage, réalignement)
     vote.py        # E.3 — alignement et vote par caractère
@@ -69,6 +70,7 @@ pipeline/
     names.py       # E.7 — noms, troncature, translittération ICAO
     decode.py      # E.4→E.7 assemblés : champs, statuts, preuves, contrôles sémantiques
     synth.py       # MRZ synthétiques valides (tests, scripts/gen_mrz.py)
+    stage.py       # étape E de bout en bout sur un recadrage (artefact JSON)
   reference.py     # chargement de reference/*.yaml
   classify.py      # F — type de document et pays
   viz_ocr.py       # G — OCR de la zone visuelle, fusion des moteurs
@@ -78,6 +80,9 @@ pipeline/
   pairing.py       # J — appariement recto/verso
   vlm_fallback.py  # K — [option] IA locale avec règle d'ancrage
   consolidate.py   # L — fusion des preuves, confiance, statut
+bench/
+  synthetic.py     # jeu synthétique : rendu OCR-B, dégradations, vérité (truth.json)
+  runner.py        # `idreader bench` : exécution, indicateurs, rapports JSON + Markdown
   runner.py        # enchaînement des étapes, cache des artefacts
 worker/
   queue.py         # prise de job, reprise, priorités
@@ -236,10 +241,12 @@ HF_HUB_OFFLINE=1
 | opencv-python-headless | traitement d'image | Apache-2.0 (embarque FFmpeg en LGPL, bibliothèque dynamique non modifiée : exception acceptée, voir `DECISIONS.md`) |
 | Pillow | images (en phase 0 : images synthétiques des tests seulement) | MIT-CMU |
 | pypdfium2 | rendu PDF | Apache-2.0 / BSD |
-| rapidocr + onnxruntime | OCR PP-OCR | Apache-2.0 / MIT |
+| onnxruntime (+ flatbuffers, protobuf, packaging) | inférence des modèles PP-OCR (phase 1a : appel direct, sans RapidOCR) | MIT (Apache-2.0, BSD-3, Apache-2.0/BSD) |
+| rapidocr (phase 1b/2, détection + reconnaissance de la zone visuelle) | OCR PP-OCR | Apache-2.0 |
 | Modèles PP-OCRv6 / v5 | OCR | Apache-2.0 |
 | Tesseract 5 | OCR MRZ | Apache-2.0 |
-| mrz.traineddata (DoubangoTelecom/tesseractMRZ) | modèle MRZ | BSD (à revérifier au téléchargement) |
+| mrz.traineddata (DoubangoTelecom/tesseractMRZ) | modèle MRZ | BSD-3-Clause (vérifié le 2026-11-24, fichier LICENSE du dépôt) |
+| Police OCR-B `ocrb10.otf` (CTAN fonts/ocr-b-outline) | rendu des MRZ synthétiques (banc, tests) ; jamais servie au front | libre sans limitation (« freely use, modify, and/or distribute »), CTAN other-free |
 | rapidfuzz | similarité de chaînes | MIT |
 | anyascii | translittération | ISC |
 | iso3166 | codes pays alpha-2 / alpha-3 | MIT |
