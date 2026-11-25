@@ -5,11 +5,11 @@ from __future__ import annotations
 import logging
 import shutil
 from datetime import datetime
-from typing import Annotated, Any, Literal
+from typing import Annotated, Literal
 
-from fastapi import APIRouter, File, Query, UploadFile
+from fastapi import APIRouter, File, UploadFile
 from pydantic import BaseModel, Field
-from sqlalchemy import func, select, text
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from idreader.api.deps import AuthDep, DbDep, SettingsDep, api_error
@@ -240,27 +240,3 @@ def _store_one(
             name=name, status="duplicate", file_id=file_id, duplicate_of_id=original.id
         )
     return UploadResult(name=name, status="queued", file_id=file_id, job_id=job_id)
-
-
-@router.get("/documents")
-def list_documents(
-    _auth: AuthDep,
-    db: DbDep,
-    batch: Annotated[str | None, Query()] = None,
-    status: Annotated[str | None, Query()] = None,
-    offset: Annotated[int, Query(ge=0)] = 0,
-    limit: Annotated[int, Query(ge=1, le=5000)] = 1000,
-) -> list[dict[str, Any]]:
-    """Lignes du tableau (vue `documents_flat`). Vide jusqu'à la phase 1."""
-    # Clauses fixes, valeurs toujours liées (jamais concaténées).
-    clauses: list[str] = []
-    params: dict[str, Any] = {"limit": limit, "offset": offset}
-    if batch is not None:
-        clauses.append("batch_id = :batch")
-        params["batch"] = batch
-    if status is not None:
-        clauses.append("status = :status")
-        params["status"] = status
-    where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
-    sql = f"SELECT * FROM documents_flat {where} ORDER BY created_at LIMIT :limit OFFSET :offset"  # noqa: S608
-    return [dict(r) for r in db.execute(text(sql), params).mappings()]

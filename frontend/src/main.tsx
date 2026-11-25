@@ -10,7 +10,9 @@ import { AuthProvider, useAuth } from "./auth";
 import { Layout } from "./components/Layout";
 import { BatchesPage } from "./pages/BatchesPage";
 import { BatchPage } from "./pages/BatchPage";
+import { AdminPage } from "./pages/AdminPage";
 import { LoginPage } from "./pages/LoginPage";
+import { VerifyPage } from "./pages/VerifyPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -36,6 +38,8 @@ function AppRoutes() {
       <Routes>
         <Route path="/" element={<BatchesPage />} />
         <Route path="/lots/:batchId" element={<BatchPage />} />
+        <Route path="/documents/:documentId" element={<VerifyPage />} />
+        {me.role === "admin" && <Route path="/admin" element={<AdminPage />} />}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>

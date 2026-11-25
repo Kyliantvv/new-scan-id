@@ -1,7 +1,15 @@
 import { describe, expect, it } from "vitest";
 
 import { buildHeaders } from "./api";
-import { describeFile, formatBytes, formatDate, viewFromUpload } from "./format";
+import {
+  cycleValue,
+  describeFile,
+  formatBytes,
+  formatDate,
+  nextToReview,
+  parseDisplayDate,
+  viewFromUpload,
+} from "./format";
 
 describe("formatBytes", () => {
   it("affiche des unités françaises", () => {
@@ -49,5 +57,27 @@ describe("buildHeaders", () => {
     expect(buildHeaders("POST", { a: 1 }, "jeton").get("X-CSRF-Token")).toBe("jeton");
     expect(buildHeaders("GET", undefined, "jeton").get("X-CSRF-Token")).toBeNull();
     expect(buildHeaders("POST", new FormData(), "jeton").get("Content-Type")).toBeNull();
+  });
+});
+
+describe("vérification", () => {
+  it("parcourt les alternatives dans les deux sens", () => {
+    expect(cycleValue("A", ["A", "B", "C"], 1)).toBe("B");
+    expect(cycleValue("A", ["A", "B", "C"], -1)).toBe("C");
+    expect(cycleValue("Z", ["A", "B"], 1)).toBe("A");
+    expect(cycleValue("Z", [], 1)).toBe("Z");
+  });
+
+  it("trouve le document suivant à vérifier", () => {
+    expect(nextToReview(["a", "b", "c"], "b")).toBe("c");
+    expect(nextToReview(["a", "b", "c"], "c")).toBe("a");
+    expect(nextToReview(["a"], "a")).toBeNull();
+    expect(nextToReview(["a", "b"], "x")).toBe("a");
+  });
+
+  it("convertit une date saisie en JJ/MM/AAAA", () => {
+    expect(parseDisplayDate("3/4/1987")).toBe("1987-04-03");
+    expect(parseDisplayDate("12.08.1974")).toBe("1974-08-12");
+    expect(parseDisplayDate(" ÉRIKSSON ")).toBe("ÉRIKSSON");
   });
 });

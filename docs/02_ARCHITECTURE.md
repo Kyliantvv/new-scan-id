@@ -191,10 +191,10 @@ Package Swift dans `vision-helper/`, cible macOS 15 minimum, utilise les API de 
 | GET | `/documents?batch=&status=&q=&sort=&offset=&limit=` | tableau (pagination serveur pour la vue globale) |
 | GET | `/documents/{id}` | détail : champs, preuves, alternatives, recadrages, cadres |
 | PATCH | `/documents/{id}/fields` | corrections (journalisées) |
-| POST | `/documents/{id}/validate` · `/reject` · `/reprocess` | actions |
+| POST | `/documents/{id}/validate` · `/reject` · `/reprocess` · `/golden` (admin) · DELETE `/documents/{id}` | actions |
 | POST | `/documents/pair` · `/documents/{id}/unpair` | recto/verso |
 | GET | `/crops/{id}/image` · `/pages/{id}/image` · `/files/{id}/original` | images (authentifiées, `Cache-Control: no-store`) |
-| GET | `/exports?format=xlsx\|csv&batch=&status=&ids=` | export |
+| POST | `/exports` (corps JSON : `format`, `batch`, `status`, `ids`, `columns`, `include_status`) | export |
 | GET | `/events?batch=` | SSE : progression des jobs |
 | GET/PUT | `/admin/settings` · CRUD `/admin/users` · GET `/admin/stats` · `/admin/health` · POST `/admin/purge` | administration |
 
@@ -204,7 +204,7 @@ Le front est servi par FastAPI (fichiers du build Vite) sur la même origine : p
 
 - React + Vite + TypeScript, Tailwind, TanStack Query pour les appels API.
 - Tableau : AG Grid Community. Modèle client par lot (quelques milliers de lignes) ; vue globale paginée côté serveur avec l'Infinite Row Model (disponible en Community). Export Excel fait côté serveur (l'export Excel d'AG Grid est payant).
-- Écran de vérification : image dans un conteneur zoomable (`react-zoom-pan-pinch`), cadres en SVG superposé, formulaire à droite, raccourcis clavier.
+- Écran de vérification : image dans un conteneur zoomable écrit pour le projet (`ZoomImage.tsx` : molette, glisser, quart de tour), cadres en SVG superposé, formulaire à droite, raccourcis clavier.
 - Aucune ressource externe (polices, icônes, scripts) : tout est empaqueté dans le build.
 
 ## Configuration (`.env`)
@@ -252,7 +252,7 @@ HF_HUB_OFFLINE=1
 | anyascii | translittération | ISC |
 | iso3166 | codes pays alpha-2 / alpha-3 | MIT |
 | Babel | noms de pays en français, formats de dates | BSD-3 |
-| openpyxl | export XLSX | MIT |
+| openpyxl (+ et_xmlfile) | export XLSX | MIT (MIT) |
 | mlx-vlm (option) | IA locale | MIT |
 | PaddleOCR-VL 1.6, Qwen3-VL-4B (option) | IA locale | Apache-2.0 |
 | React, React Router, Vite, Tailwind, TanStack Query | front | MIT |

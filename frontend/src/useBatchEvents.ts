@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 
 import type { JobState } from "./api";
@@ -31,6 +32,7 @@ export function useBatchEvents(batchId: string): {
 } {
   const [jobsByFile, setJobs] = useState<Record<string, JobState>>({});
   const [connected, setConnected] = useState(false);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     setJobs({});
@@ -39,12 +41,16 @@ export function useBatchEvents(batchId: string): {
     source.onerror = () => setConnected(false); // EventSource se reconnecte seul
     source.addEventListener("job", (msg) => {
       const event = JSON.parse((msg as MessageEvent<string>).data) as JobEvent;
+      // Fin d'un job : de nouveaux documents (ou un appariement) sont disponibles.
+      if (event.status === "done" || event.status === "failed") {
+        void queryClient.invalidateQueries({ queryKey: ["documents", batchId] });
+      }
       if (event.type !== "process_file" || !event.file_id) return;
       const fileId = event.file_id;
       setJobs((prev) => ({ ...prev, [fileId]: toJobState(event) }));
     });
     return () => source.close();
-  }, [batchId]);
+  }, [batchId, queryClient]);
 
   return { jobsByFile, connected };
 }

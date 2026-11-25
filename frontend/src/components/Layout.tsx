@@ -13,6 +13,11 @@ export function Layout({ children }: { children: ReactNode }) {
             IDReader
           </Link>
           <div className="flex items-center gap-3 text-sm">
+            {me?.role === "admin" && (
+              <Link to="/admin" className="text-slate-700 hover:underline">
+                Administration
+              </Link>
+            )}
             <span className="hidden text-slate-600 sm:inline">
               {me?.email}
               {me?.role === "admin" ? " · admin" : ""}

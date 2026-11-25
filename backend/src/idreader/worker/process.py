@@ -25,6 +25,7 @@ from pydantic import BaseModel
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
+from idreader.core import app_settings
 from idreader.core import models as m
 from idreader.core.config import Settings
 from idreader.core.db import make_session_factory, new_id
@@ -167,6 +168,8 @@ def process_file(ctx: JobContext) -> None:
         raise JobError("FILE_CHECKSUM_MISMATCH")
 
     engines = engines_for(settings)
+    with factory() as db:
+        threshold = app_settings.load(db, settings).auto_validate_threshold
 
     def progress(p: float, stage: str) -> None:
         ctx.check()
@@ -177,7 +180,7 @@ def process_file(ctx: JobContext) -> None:
             path,
             engines,
             today=date.today(),
-            threshold=settings.auto_validate_threshold,
+            threshold=threshold,
             allow_specimen=settings.allow_specimen,
             progress=progress,
         )

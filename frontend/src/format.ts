@@ -81,3 +81,79 @@ export function viewFromUpload(result: UploadResult): FileView {
     job: { id: result.job_id ?? "", status: "queued", progress: 0, stage: null, error_code: null, attempts: 0 },
   };
 }
+
+// Statuts d'un document (docs/01_SPEC_FONCTIONNELLE.md § Statuts d'un document).
+export const DOC_STATUS: Record<string, { label: string; tone: Tone }> = {
+  pending: { label: "En attente", tone: "neutral" },
+  processing: { label: "En cours", tone: "neutral" },
+  auto_validated: { label: "Validé (auto)", tone: "success" },
+  to_review: { label: "À vérifier", tone: "warning" },
+  manual_validated: { label: "Validé (manuel)", tone: "success" },
+  failed: { label: "Échec", tone: "error" },
+  duplicate: { label: "Doublon", tone: "warning" },
+};
+
+export function docStatusLabel(status: unknown): string {
+  return DOC_STATUS[String(status)]?.label ?? String(status ?? "");
+}
+
+export const DOC_TYPES: Record<string, string> = {
+  passport: "Passeport",
+  id_card: "Carte d'identité",
+  residence_permit: "Titre de séjour",
+  visa: "Visa",
+  travel_document: "Document de voyage",
+  other: "Autre",
+};
+
+export const FIELD_STATUS: Record<string, { label: string; tone: Tone }> = {
+  ok: { label: "Prouvé", tone: "success" },
+  repaired: { label: "Réparé et prouvé", tone: "success" },
+  uncertain: { label: "Non prouvé", tone: "warning" },
+  conflict: { label: "Conflit", tone: "error" },
+  missing: { label: "Absent", tone: "neutral" },
+  manual: { label: "Saisi", tone: "success" },
+};
+
+export const SOURCE_LABELS: Record<string, string> = {
+  mrz: "MRZ",
+  viz: "OCR",
+  barcode: "Code-barres",
+  vlm: "IA",
+  human: "Humain",
+};
+
+export const TONE_CLASSES: Record<Tone, string> = {
+  neutral: "bg-slate-100 text-slate-700",
+  success: "bg-emerald-100 text-emerald-800",
+  warning: "bg-amber-100 text-amber-900",
+  error: "bg-red-100 text-red-800",
+};
+
+/** Alternative suivante (sens +1) ou précédente (−1) dans la liste valeur + candidats. */
+export function cycleValue(current: string, options: string[], step: 1 | -1): string {
+  const list = [...new Set(options.filter((o) => o !== ""))];
+  if (list.length === 0) return current;
+  const i = list.indexOf(current);
+  if (i < 0) return list[step === 1 ? 0 : list.length - 1] ?? current;
+  return list[(i + step + list.length) % list.length] ?? current;
+}
+
+/** Document suivant à vérifier après `currentId` (ordre du tableau), sinon le premier. */
+export function nextToReview(ids: string[], currentId: string): string | null {
+  const others = ids.filter((id) => id !== currentId);
+  if (others.length === 0) return null;
+  const i = ids.indexOf(currentId);
+  const after = i < 0 ? [] : ids.slice(i + 1);
+  return after[0] ?? others[0] ?? null;
+}
+
+/** JJ/MM/AAAA saisi par l'opérateur → AAAA-MM-JJ ; autre texte inchangé. */
+export function parseDisplayDate(text: string): string {
+  const m = /^\s*(\d{1,2})[/.\-](\d{1,2})[/.\-](\d{4})\s*$/.exec(text);
+  if (!m) return text.trim();
+  const [, d, mo, y] = m;
+  return `${y}-${mo!.padStart(2, "0")}-${d!.padStart(2, "0")}`;
+}
+
+export const DATE_FIELDS = new Set(["date_of_birth", "date_of_issue", "date_of_expiry"]);

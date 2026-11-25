@@ -13,7 +13,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from idreader import __version__
-from idreader.api import auth, batches, events
+from idreader.api import admin, auth, batches, documents, events, exports
 from idreader.core.config import Settings, get_settings
 from idreader.core.db import make_engine, make_session_factory
 from idreader.core.logging import log_exception_safely
@@ -92,6 +92,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(auth.router, prefix="/api")
     app.include_router(batches.router, prefix="/api")
     app.include_router(events.router, prefix="/api")
+    app.include_router(documents.router, prefix="/api")
+    app.include_router(exports.router, prefix="/api")
+    app.include_router(admin.router, prefix="/api")
 
     @app.get("/api/health", tags=["admin"])
     def health() -> dict[str, str]:

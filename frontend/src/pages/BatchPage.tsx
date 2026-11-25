@@ -3,7 +3,7 @@ import { useCallback, useMemo, useState } from "react";
 import { Link, useParams } from "react-router";
 
 import { api, ApiError, uploadFile } from "../api";
-import { DocumentsGrid } from "../components/DocumentsGrid";
+import { DocumentsSection } from "../components/DocumentsSection";
 import { DropZone } from "../components/DropZone";
 import { FileList, type FileItem } from "../components/FileList";
 import { viewFromUpload, type FileView } from "../format";
@@ -115,10 +115,7 @@ export function BatchPage() {
       </div>
       <DropZone onFiles={onFiles} />
       <FileList items={items} />
-      <section className="space-y-2">
-        <h2 className="font-medium">Documents</h2>
-        <DocumentsGrid rows={documents.data ?? []} />
-      </section>
+      <DocumentsSection batchId={batchId} rows={documents.data ?? []} />
     </div>
   );
 }

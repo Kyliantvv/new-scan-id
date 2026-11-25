@@ -10,8 +10,8 @@
 | 0 — Socle | fait sous Windows, à valider sur macOS | Helper Swift `idvision` écrit sans compilateur : à compiler et tester sur le Mac (liste dans `docs/DECISIONS.md`). |
 | 1a — MRZ sans Vision + banc synthétique | fait | Les trois critères sont atteints (2026-11-25). |
 | 1b — Vision, calibration, banc golden | à faire (Mac) | Demande macOS et de vraies pièces. |
-| 2 — Zone visuelle (G, H, L) | en cours sous Windows | G (PP-OCRv6 medium det+rec, fusion), H (MRZ guidée, libellés, dates multilingues), L (confiance, statuts, raisons, alertes), générateur UTO et `analyze_file` écrits ; **reste** : tests unitaires de G/H/L, banc `--set documents`, branchement dans le worker, DECISIONS. |
-| 3 — Vérification humaine et exports | à faire | |
+| 2 — Zone visuelle (G, H, L) | fait sous Windows, à valider sur macOS | G (PP-OCRv6 medium det + rec, fusion), H (MRZ guidée, libellés, dates multilingues), L (confiance, statuts, raisons, alertes), documents UTO synthétiques, worker branché, `idreader analyze`, banc `documents`. Critères chiffrés : à mesurer avec Vision (deux moteurs) et sur vraies pièces. |
+| 3 — Vérification humaine et exports | fait sous Windows, à valider sur macOS | Écran de vérification (zoom, cadres, alternatives, MRZ colorée, raccourcis), édition en ligne, audit avant/après, exports XLSX/CSV, réglages, comptes, statistiques, « Ajouter au jeu de test ». Les trois critères (15 s au clavier, audit visible, Excel) se vérifient à la main sur le Mac. |
 | 4 — Recto/verso, doublons, sans MRZ | à faire | Sans l'étape I (codes-barres, via Vision). |
 | 5 — Exploitation (`deploy/`) | à faire | Fichiers seulement, rien n'est exécuté sous Windows. |
 | 6 — IA locale (option) | à faire (Mac) | Décision sur mesures. |
@@ -21,14 +21,16 @@
 
 | Banc | Date | Commit | Moteurs actifs | Résultat | Représentatif |
 |---|---|---|---|---|---|
-| synthétique, 300 cas, graine 2026 | 2026-11-25 | `7859b22` | ppocr | MRZ entièrement correcte 80,0 % · sommes valides 92,7 % · 0 erreur auto-validée · p50 225 ms | **non** (Windows, sans Vision ni Tesseract) |
+| synthétique (MRZ), 300 cas, graine 2026 | 2026-11-25 | `7859b22` | ppocr | MRZ entièrement correcte 80,0 % · sommes valides 92,7 % · 0 erreur auto-validée · p50 225 ms | **non** (Windows, sans Vision ni Tesseract) |
+| documents UTO (A→L), 60 documents, graine 2026 | 2026-11-25 | `c46c8b2` | ppocr | détection 100 % · champs obligatoires tous justes 30,0 % · noms justes 71,7 % sans accents, 38,5 % avec · auto-validation 0 % (un seul moteur) · **0 erreur auto-validée** · p50 3,8 s par document | **non** |
 
-Rapport : `bench/results/2026-11-24_7859b22_synthetic.md` (date UTC dans le nom). Ces chiffres servent de référence pour suivre le code ; aucun poids ni seuil n'est calibré dessus.
+Rapports : `bench/results/2026-11-24_7859b22_synthetic.md`, `bench/results/2026-11-25_c46c8b2_documents.md` (date UTC dans le nom). Ces chiffres servent de référence pour suivre le code ; aucun poids ni seuil n'est calibré dessus.
 
-## Premier essai de la phase 2 (6 documents UTO, ppocr seul, non représentatif)
+## Lecture des résultats de la phase 2 (non représentatifs)
 
-- Passeports : 10 à 11 champs justes sur 11, accents compris dans la plupart des cas ; statut « À vérifier » à cause du sexe, de la nationalité et du pays lus par un seul moteur (attendu sans Vision).
-- Points à corriger repérés : un recadrage fantôme (pli bas de la page de scan) détecté en plus du document ; quelques accents perdus en qualité « poor » (`Û`→`Ú`) ; espaces perdus (`SANTALUCÍA`) ; la date de délivrance et l'autorité du verso ne sont pas encore rattachées au recto (attend l'appariement, phase 4).
+- Sans Vision, chaque valeur n'a qu'un moteur de zone visuelle : sexe, nationalité et noms restent « non prouvés », d'où 0 % d'auto-validation. C'est voulu (règle 3).
+- Qualité « poor » et pages A4 (cartes à 300 dpi, petits caractères) : 0 % de documents entièrement justes avec PP-OCR seul.
+- Accents : PP-OCR perd parfois un tréma ou un accent (`Ï`→`I`). La MRZ ne peut pas le voir ; d'où la règle « accents prouvés par deux moteurs » (DECISIONS du 2026-11-25).
 
 ## Ce qui reste bloqué, et pourquoi
 

@@ -1,1 +1,1 @@
-"""Paquet idreader.exports."""
+"""Exports XLSX et CSV."""
