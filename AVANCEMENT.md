@@ -135,3 +135,16 @@ Machine : macOS 27.2.1, M1, 16 Go, 168 Go libres, pas de VM Lima (`deploy/MACHIN
 - Temps : p50 par document ×3,3 (3,8 → 12,5 s) : trois moteurs de zone visuelle au lieu d'un seul.
 - Qualité « poor » : 5 % de documents entièrement justes.
 - Le banc doit signaler un moteur actif dont toutes les lectures échouent (bug `data/tmp/` passé inaperçu).
+
+## Lot réel de 23 documents français (2026-11-25) : diagnostic
+
+Résultat du premier lot réel : tout « À vérifier », noms et prénoms faux (« P », « (6Z) », « e napes 12 »), nom d'usage mêlé aux prénoms, pays et dates vides, recto/verso des CNI non associés. **Aucune image ni valeur de ce lot n'a été ouverte** (règle : chiffres agrégés et codes seulement).
+
+Étape 1 faite : `uv run idreader diagnose --batch <id> [--json]` (`backend/src/idreader/diagnose.py`). Par document : type, pays (code ISO), nombre de recadrages, MRZ trouvée / valide / format, sommes en échec (noms des contrôles), étape en cause, appariement, jobs (dont `pair_batch` et son échéance), et pour chaque champ : statut, confiance, source (`mrz`, `viz:label`, `viz:mrz_guided`, `viz:type`, `human`), longueur (noms seulement) et drapeaux d'anomalie (`NUMBERING`, `LABEL_WORD`, `SHORT`, `DIGITS`, `LOWERCASE`, `DOC_CODE`, `ODD_CHAR`, `USAGE_MARK`, `DATE_FORMAT`) avec la *forme* du texte suspect (`(9A)`), jamais sa valeur. Test de fuite : sur un lot synthétique, aucune valeur, ligne de MRZ, nom de fichier ni nom de lot dans la sortie texte ni JSON.
+
+Hypothèses à confirmer par le diagnostic (vérifiées seulement sur des chaînes synthétiques, `label_field`) :
+- « Prénoms (2) » propre est bien reconnu comme libellé ; les variantes OCR ne le sont pas (`(2` sans parenthèse fermante, `{2}`, `[2]`, `Prénoms 2`, `(Z)`) et un « (2) » ou « (6Z) » seul (séparé de son libellé) n'est ni libellé ni filtré : il peut devenir une valeur (cas « (6Z) »).
+- « Type : P » n'est pas un libellé connu : un « P » isolé peut être lu comme texte libre ; le drapeau `DOC_CODE` le signalera.
+- « Nom ép. DUPONT » n'est pas un libellé combiné : à traiter avec le nom d'usage.
+
+Reste (après ton retour du diagnostic) : 2. gabarits `reference/templates/` (France d'abord), 3. images de contrôle à valider par toi, 4. corrections (lecture MRZ, appariement automatique, MRZ prioritaire sur la zone imprimée), 5. autres pays.

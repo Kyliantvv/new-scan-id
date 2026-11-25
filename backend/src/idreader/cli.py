@@ -314,3 +314,27 @@ def analyze(
         typer.echo("Aucun document détecté.")
     if debug:
         typer.echo(f"\nArtefacts : {out}")
+
+
+@app.command()
+def diagnose(
+    batch: Annotated[str, typer.Option("--batch", help="Identifiant du lot")],
+    as_json: Annotated[bool, typer.Option("--json", help="Sortie JSON complète")] = False,
+) -> None:
+    """Où le pipeline casse sur un lot : codes, compteurs et drapeaux, aucune donnée personnelle."""
+    from idreader.core.db import make_engine, make_session_factory
+    from idreader.diagnose import diagnose_batch, render_text
+
+    settings = get_settings()
+    _require_schema(settings)
+    engine = make_engine(settings)
+    try:
+        with make_session_factory(engine, immediate=False)() as db:
+            try:
+                diag = diagnose_batch(db, settings, batch)
+            except LookupError:
+                typer.echo("Lot introuvable (BATCH_NOT_FOUND).", err=True)
+                raise typer.Exit(1) from None
+    finally:
+        engine.dispose()
+    typer.echo(diag.model_dump_json(indent=1) if as_json else render_text(diag), nl=as_json)

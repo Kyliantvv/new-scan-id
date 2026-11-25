@@ -70,6 +70,7 @@ uv run idreader serve                      # API sur 127.0.0.1:8000
 uv run idreader worker                     # worker d'analyse
 uv run idreader analyze chemin/fichier.pdf --debug   # pipeline en CLI, artefacts dans data/debug/
 uv run idreader bench --set golden --compare last
+uv run idreader diagnose --batch <id>       # où le pipeline casse sur un lot, sans donnée personnelle
 uv run pytest && uv run ruff check . && uv run mypy src
 
 # Helper Swift
