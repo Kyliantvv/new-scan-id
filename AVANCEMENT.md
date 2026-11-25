@@ -182,3 +182,22 @@ Banc documents avant → après ce lot de corrections : champs obligatoires tous
 Trois gabarits validés sur image de contrôle : passeport biométrique (`FRA_passport_2009`), CNI 2021 recto et verso (`FRA_id_card_2021`), ancienne CNI recto et verso (`FRA_id_card_1995`). Tests : schéma, cohérence (formats de MRZ, zones qui ne se chevauchent pas, zones invalides refusées) et, avec les spécimens PRADO (`IDR_SPECIMENS_DIR`), le texte attendu dans chaque zone (passeport : nom, prénoms, dates, lieu, autorité, adresse, numéro, MRZ de 2 lignes ; CNI 2021 : nom, n° du document, expiration, MRZ TD1 ; ancienne CNI : MRZ, validité, adresse).
 
 **Pas encore branchés sur le pipeline** (étape suivante, avec mesure du banc). Manquent : ancien passeport (avant 2009) et des CNI en haute résolution (≥ 1000 px de large) pour mesurer la lecture, pas seulement la position des zones.
+
+### Récupération du projet « Scan » (2026-11-25)
+
+Le projet précédent (PHP/Node, tesseract.js, `~/Desktop/seminaire/scan-passeport-cni`) avait 15/20 sur le PDF de test. Repris, sans image ni nom : motifs et tables seulement.
+
+| Apport | Où | Effet |
+|---|---|---|
+| 128 libellés, 14 langues de plus | `reference/viz_labels.yaml` | libellés reconnus sur les pièces nordiques, baltes, d'Europe centrale, turques, albanaises, maltaises |
+| Motifs de n° de document, 11 États | `reference/doc_number_patterns.yaml` | angles morts de la MRZ départagés, alerte `UNUSUAL_NUMBER` |
+| Nationalité en toutes lettres → code ICAO | `reference/nationality_words.yaml`, `extract.nationality_code` | « Française » sort `FRA` sans MRZ |
+| État émetteur lu sur l'en-tête | `reference/country_headers.yaml`, `classify._state_in_text` | sans MRZ, `issuing_state` est « incertain » au lieu de « manquant » |
+| N° de document sans libellé | `extract` (passeport FR, CIE italienne) | libellé illisible : le format suffit |
+| Date de délivrance déduite | `consolidate._deduced_issue_date` | passeport FR et CNI 2021 de majeur : expiration − 10 ans + 1 jour ; ancienne CNI : AAMM du n° de carte (jour 01). Toujours `uncertain`, source `rule`, alerte `ISSUE_DATE_DEDUCED` |
+
+Non repris : l'appariement par nom de fichier (les noms de fichiers portent des noms de clients, règle 2).
+
+Tests : `tests/unit/pipeline/test_catalogue_import.py` (+ 66 cas) ; suite complète 456 passent, ruff et mypy propres. Banc documents avant → après : 41,7 → 41,7 % de champs obligatoires, noms accentués 52,7 %, 0 erreur auto-validée, 0 fausse paire : **aucune régression** (attendu : le banc synthétique a toujours une MRZ, ces apports jouent sans MRZ, donc sur le lot réel).
+
+À mesurer sur ton lot : relance l'analyse puis `uv run idreader diagnose --batch <id>`.

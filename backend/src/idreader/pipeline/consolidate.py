@@ -7,7 +7,7 @@ sont celles du tableau du § L ; elles ne sont pas calibrées (calibration sur g
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, timedelta
 from enum import StrEnum
 from typing import Any
 
@@ -46,6 +46,10 @@ CONFIDENCE = {
 VIZ_SINGLE_MIN_OCR = 0.8
 EXPIRES_SOON_DAYS = 183
 ADULT_AGE = 18
+# Durée de validité (années) d'un titre délivré à un majeur, par (État, type) : la date de
+# délivrance se déduit alors de l'expiration (délivré le 16/01/2026 → expire le 15/01/2036).
+# Repris du catalogue du projet « Scan » ; la CNI française 2021 est la seule carte TD1 de la FRA.
+ADULT_VALIDITY_YEARS = {("FRA", "passport"): 10, ("FRA", "id_card"): 10}
 
 REASON_LABELS: dict[str, str] = {
     **MRZ_REASONS,
@@ -80,6 +84,7 @@ ALERT_LABELS: dict[str, str] = {
     "ISSUE_VALIDITY_UNUSUAL": "Durée de validité inhabituelle",
     "ISSUE_DATE_INCONSISTENT": "Date de délivrance incohérente",
     "MRZ_NAME_TRUNCATED": "Nom tronqué dans la MRZ",
+    "ISSUE_DATE_DEDUCED": "Date de délivrance déduite de l'expiration (non lue)",
 }
 
 
@@ -281,6 +286,19 @@ def consolidate(
         else:
             fields[name] = _missing(name)
 
+    if fields["issuing_state"].status is FieldState.MISSING and classification.issuing_state:
+        fields["issuing_state"] = FieldResult(  # lu sur l'en-tête : jamais prouvé par une MRZ
+            name="issuing_state",
+            value=classification.issuing_state,
+            status=FieldState.UNCERTAIN,
+            confidence=CONFIDENCE["viz_weak"],
+            sources=["viz"],
+            evidence=[{"src": "viz", "method": "country_header"}],
+        )
+    deduced = _deduced_issue_date(fields, classification)
+    if deduced is not None:
+        fields["date_of_issue"] = deduced
+
     # Raisons venues de la MRZ : celles des champs affichés (après confirmation éventuelle
     # par la zone visuelle), puis celles du document entier.
     if mrz is not None:
@@ -353,6 +371,64 @@ def consolidate(
     )
 
 
+def _deduced_issue_date(
+    fields: dict[str, FieldResult], classification: Classification
+) -> FieldResult | None:
+    """Date de délivrance non lue, déduite de la date d'expiration (titulaire majeur à la
+    délivrance, durée de validité connue du modèle). Jamais plus qu'« incertaine » : c'est une
+    règle de calcul, pas une lecture (règle 3 de CLAUDE.md)."""
+    issue = fields["date_of_issue"]
+    if issue.status is not FieldState.MISSING:
+        return None
+    if classification.mrz_format == "FRA-ID":
+        return _issue_from_old_card_number(fields["document_number"])
+    years = ADULT_VALIDITY_YEARS.get(
+        (classification.issuing_state or "", classification.doc_type.value)
+    )
+    expiry, born = fields["date_of_expiry"], fields["date_of_birth"]
+    if years is None or (
+        classification.doc_type is DocType.ID_CARD and classification.mrz_format != "TD1"
+    ):
+        return None
+    exp, dob = _iso(expiry.value), _iso(born.value)
+    if exp is None or dob is None or expiry.status not in (FieldState.OK, FieldState.REPAIRED):
+        return None
+    try:
+        issued = exp.replace(year=exp.year - years) + timedelta(days=1)
+    except ValueError:  # 29 février
+        issued = exp.replace(year=exp.year - years, day=28) + timedelta(days=1)
+    if age_on(dob, issued) < ADULT_AGE:
+        return None  # titulaire mineur à la délivrance : durée différente, on ne devine pas
+    return FieldResult(
+        name="date_of_issue",
+        value=issued.isoformat(),
+        status=FieldState.UNCERTAIN,
+        confidence=0.5,
+        sources=["rule"],
+        evidence=[{"src": "rule", "method": "validity_deduction", "years": years}],
+    )
+
+
+def _issue_from_old_card_number(number: FieldResult) -> FieldResult | None:
+    """Ancienne CNI française : les 4 premiers chiffres du n° de carte sont l'année et le mois
+    de délivrance (AAMM). Le jour est inconnu : fixé au 01 et signalé comme déduit."""
+    digits = (number.value or "")[:4]
+    if number.status not in (FieldState.OK, FieldState.REPAIRED) or not digits.isdigit():
+        return None
+    yy, month = int(digits[:2]), int(digits[2:])
+    year = 1900 + yy if yy >= 88 else 2000 + yy  # modèle créé en 1988, remplacé en 2021
+    if not 1 <= month <= 12 or year > 2021:
+        return None
+    return FieldResult(
+        name="date_of_issue",
+        value=date(year, month, 1).isoformat(),
+        status=FieldState.UNCERTAIN,
+        confidence=0.5,
+        sources=["rule"],
+        evidence=[{"src": "rule", "method": "card_number"}],
+    )
+
+
 def _alerts(
     fields: dict[str, FieldResult],
     mrz: MrzResult | None,
@@ -371,6 +447,8 @@ def _alerts(
             alerts.append("EXPIRES_SOON")
     if born is not None and 0 <= age_on(born, today) < ADULT_AGE:
         alerts.append("MINOR")
+    if fields["date_of_issue"].sources == ["rule"]:
+        alerts.append("ISSUE_DATE_DEDUCED")
     if quality_alerts:
         alerts.append("LOW_QUALITY")
     number = fields["document_number"].value

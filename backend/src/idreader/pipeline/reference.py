@@ -81,3 +81,26 @@ def doc_code_overrides() -> dict[tuple[str, str], str]:
             for code, doc_type in codes.items():
                 table[(str(state), str(code))] = str(doc_type)
     return table
+
+
+@lru_cache(maxsize=1)
+def nationality_words() -> dict[str, str]:
+    """Nationalité ou pays en toutes lettres (replié : minuscules, sans accents) → code ICAO.
+
+    Adjectifs (`demonyms`) et noms de pays en français (`countries`) :
+    `reference/nationality_words.yaml`.
+    """
+    data = _load("nationality_words.yaml")
+    out: dict[str, str] = {}
+    for section in ("countries", "demonyms"):  # les adjectifs l'emportent sur les noms de pays
+        block = data.get(section)
+        if isinstance(block, dict):
+            out.update({str(k): str(v) for k, v in block.items()})
+    return out
+
+
+@lru_cache(maxsize=1)
+def country_headers() -> dict[str, re.Pattern[str]]:
+    """Code ICAO → motif de l'intitulé d'État imprimé en tête du document (texte replié)."""
+    data = _load("country_headers.yaml")
+    return {str(k): re.compile(rf"(?<![A-Z])(?:{v})(?![A-Z])") for k, v in data.items()}

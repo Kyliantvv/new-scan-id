@@ -6,3 +6,33 @@
 
 FRA:
   P: '^\d{2}[A-Z]{2}\d{5}$'   # passeport français
+  I: '^(?:[0-9A-Z]{9}|[0-9A-Z]{12})$'   # CNI 2021 (9 car. dans la MRZ) ou ancienne CNI (12 car.)
+
+# Modèles ci-dessous : repris du catalogue du projet « Scan » (src/docs/catalogue.js, formats
+# du n° de document observés sur des spécimens et des documents du corpus). Ils servent à
+# départager les angles morts de la MRZ et à lever « UNUSUAL_NUMBER ».
+MCO:
+  P: '^[A-Z]\d{6}$'                      # 1 lettre + 6 chiffres (un seul exemplaire observé)
+ITA:
+  C: '^C[A-Z]\d{5}[A-Z]{2}$'             # CIE : CA12345AB
+  P: '^[A-Z]{2}\d{7}$'                   # YA1234567
+D:
+  I: '^[CFGHJKLMNPRTVWXYZ0-9]{9}$'       # alphabet sans voyelles ni lettres ambiguës
+  P: '^[CFGHJKLMNPRTVWXYZ0-9]{9}$'
+ESP:
+  I: '^[A-Z]{3}\d{6}$'                   # DNI 3.0 : BAA000589
+  P: '^[A-Z]{3}\d{6}$'
+CHE:
+  I: '^[A-Z]\d{7}$'
+  P: '^[A-Z]\d{7}$'
+NLD:
+  I: '^[A-NP-Z]{2}[A-NP-Z0-9]{6}\d$'     # depuis 2014 : jamais la lettre O
+  P: '^[A-NP-Z]{2}[A-NP-Z0-9]{6}\d$'
+GBR:
+  P: '^\d{9}$'
+USA:
+  P: '^(?:\d{9}|[A-Z]\d{8})$'            # 9 chiffres, ou 1 lettre + 8 chiffres depuis 2021
+CHN:
+  P: '^E[A-Z0-9]\d{7}$'
+DNK:
+  P: '^\d{9}$'

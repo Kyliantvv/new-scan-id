@@ -16,7 +16,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from idreader.pipeline.extract import fold
 from idreader.pipeline.mrz.decode import MrzResult
 from idreader.pipeline.mrz.formats import MrzFormat
-from idreader.pipeline.reference import doc_code_overrides, mrz_state_codes
+from idreader.pipeline.reference import country_headers, doc_code_overrides, mrz_state_codes
 
 
 class DocType(StrEnum):
@@ -138,7 +138,11 @@ def classify_text(texts: Sequence[str], *, physical_format: str = "unknown") -> 
 
 
 def _state_in_text(folded: str) -> str | None:
-    """Code ICAO à 3 lettres isolé dans le texte (ex. « FRA », « UTO »), s'il est unique."""
+    """État émetteur sans MRZ : code ICAO isolé dans le texte (« FRA », « UTO ») s'il est unique,
+    sinon intitulé d'État en en-tête (« RÉPUBLIQUE FRANÇAISE ») s'il désigne un seul État."""
     tokens = {t for t in folded.split() if len(t) == 3 and t.isalpha()}
     hits = sorted(t for t in tokens if t in mrz_state_codes())
-    return hits[0] if len(hits) == 1 else None
+    if len(hits) == 1:
+        return hits[0]
+    named = sorted(code for code, pattern in country_headers().items() if pattern.search(folded))
+    return named[0] if len(named) == 1 else None

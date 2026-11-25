@@ -1,0 +1,330 @@
+# Nationalité écrite en toutes lettres → code ICAO (clés en minuscules, sans accents).
+# Repris de src/viz/parse.js et src/mrz/countries.js du projet « Scan ». Sert à la lecture de
+# la zone visuelle quand il n'y a pas de MRZ : la nationalité est alors sortie en code, comme la MRZ.
+
+demonyms:
+  "francaise": FRA
+  "francais": FRA
+  "french": FRA
+  "italiana": ITA
+  "italiano": ITA
+  "italian": ITA
+  "italienne": ITA
+  "nederlandse": NLD
+  "nederlander": NLD
+  "dutch": NLD
+  "netherlands": NLD
+  "neerlandaise": NLD
+  "united states of america": USA
+  "united states": USA
+  "american": USA
+  "americaine": USA
+  "belge": BEL
+  "belgian": BEL
+  "belgische": BEL
+  "espanola": ESP
+  "espanol": ESP
+  "spanish": ESP
+  "espagnole": ESP
+  "deutsch": D
+  "deutsche": D
+  "german": D
+  "allemande": D
+  "portuguesa": PRT
+  "portuguese": PRT
+  "portugaise": PRT
+  "suisse": CHE
+  "swiss": CHE
+  "schweizer": CHE
+  "svizzera": CHE
+  "luxembourgeoise": LUX
+  "luxembourgish": LUX
+  "monegasque": MCO
+  "monegasques": MCO
+  "britannique": GBR
+  "british": GBR
+  "irish": IRL
+  "irlandaise": IRL
+  "polska": POL
+  "polish": POL
+  "polonaise": POL
+  "romana": ROU
+  "romanian": ROU
+  "roumaine": ROU
+  "marocaine": MAR
+  "moroccan": MAR
+  "algerienne": DZA
+  "algerian": DZA
+  "tunisienne": TUN
+  "tunisian": TUN
+  "turque": TUR
+  "turkish": TUR
+  "canadienne": CAN
+  "canadian": CAN
+  "chinoise": CHN
+  "chinese": CHN
+
+countries:
+  "afghanistan": AFG
+  "afrique du sud": ZAF
+  "aland": ALA
+  "albanie": ALB
+  "algerie": DZA
+  "allemagne": DEU
+  "andorre": AND
+  "angola": AGO
+  "anguilla": AIA
+  "antarctique": ATA
+  "antigua-et-barbuda": ATG
+  "apatride": XXA
+  "arabie saoudite": SAU
+  "argentine": ARG
+  "armenie": ARM
+  "aruba": ABW
+  "australie": AUS
+  "autriche": AUT
+  "azerbaidjan": AZE
+  "bahamas": BHS
+  "bahrein": BHR
+  "bangladesh": BGD
+  "banque africaine d'import-export": XIM
+  "banque africaine de developpement": XBA
+  "barbade": BRB
+  "belgique": BEL
+  "belize": BLZ
+  "benin": BEN
+  "bermudes": BMU
+  "bhoutan": BTN
+  "bielorussie": BLR
+  "birmanie": MMR
+  "bolivie": BOL
+  "bonaire, saint-eustache et saba": BES
+  "bosnie-herzegovine": BIH
+  "botswana": BWA
+  "bresil": BRA
+  "brunei": BRN
+  "bulgarie": BGR
+  "burkina faso": BFA
+  "burundi": BDI
+  "cambodge": KHM
+  "cameroun": CMR
+  "canada": CAN
+  "cap-vert": CPV
+  "chili": CHL
+  "chine": CHN
+  "chypre": CYP
+  "colombie": COL
+  "communaute de developpement d'afrique australe": XDC
+  "communaute economique des etats de l'afrique de l'ouest": XEC
+  "comores": COM
+  "congo": COG
+  "conseil de l'europe": XCE
+  "coree du nord": PRK
+  "coree du sud": KOR
+  "costa rica": CRI
+  "cote d'ivoire": CIV
+  "croatie": HRV
+  "cuba": CUB
+  "curacao": CUW
+  "danemark": DNK
+  "djibouti": DJI
+  "dominique": DMA
+  "egypte": EGY
+  "emirats arabes unis": ARE
+  "equateur": ECU
+  "erythree": ERI
+  "espagne": ESP
+  "estonie": EST
+  "eswatini": SWZ
+  "etats-unis": USA
+  "ethiopie": ETH
+  "fidji": FJI
+  "finlande": FIN
+  "france": FRA
+  "gabon": GAB
+  "gambie": GMB
+  "georgie": GEO
+  "georgie du sud-et-les iles sandwich du sud": SGS
+  "ghana": GHA
+  "gibraltar": GIB
+  "grece": GRC
+  "grenade": GRD
+  "groenland": GRL
+  "guadeloupe": GLP
+  "guam": GUM
+  "guatemala": GTM
+  "guernesey": GGY
+  "guinee": GIN
+  "guinee equatoriale": GNQ
+  "guinee-bissau": GNB
+  "guyana": GUY
+  "guyane": GUF
+  "haiti": HTI
+  "honduras": HND
+  "hong kong": HKG
+  "hongrie": HUN
+  "ile bouvet": BVT
+  "ile christmas": CXR
+  "ile de man": IMN
+  "ile norfolk": NFK
+  "iles caimans": CYM
+  "iles cocos": CCK
+  "iles cook": COK
+  "iles feroe": FRO
+  "iles heard-et-macdonald": HMD
+  "iles malouines": FLK
+  "iles mariannes du nord": MNP
+  "iles marshall": MHL
+  "iles mineures eloignees des etats-unis": UMI
+  "iles pitcairn": PCN
+  "iles salomon": SLB
+  "iles turques-et-caiques": TCA
+  "iles vierges britanniques": VGB
+  "iles vierges des etats-unis": VIR
+  "inde": IND
+  "indonesie": IDN
+  "institution specialisee des nations unies": UNA
+  "interpol": XPO
+  "irak": IRQ
+  "iran": IRN
+  "irlande": IRL
+  "islande": ISL
+  "israel": ISR
+  "italie": ITA
+  "jamaique": JAM
+  "japon": JPN
+  "jersey": JEY
+  "jordanie": JOR
+  "kazakhstan": KAZ
+  "kenya": KEN
+  "kirghizistan": KGZ
+  "kiribati": KIR
+  "kosovo": RKS
+  "koweit": KWT
+  "la reunion": REU
+  "laos": LAO
+  "lesotho": LSO
+  "lettonie": LVA
+  "liban": LBN
+  "liberia": LBR
+  "libye": LBY
+  "liechtenstein": LIE
+  "lituanie": LTU
+  "luxembourg": LUX
+  "macao": MAC
+  "macedoine du nord": MKD
+  "madagascar": MDG
+  "malaisie": MYS
+  "malawi": MWI
+  "maldives": MDV
+  "mali": MLI
+  "malte": MLT
+  "marche commun de l'afrique orientale et australe": XCO
+  "maroc": MAR
+  "martinique": MTQ
+  "maurice": MUS
+  "mauritanie": MRT
+  "mayotte": MYT
+  "mexique": MEX
+  "micronesie": FSM
+  "moldavie": MDA
+  "monaco": MCO
+  "mongolie": MNG
+  "montenegro": MNE
+  "montserrat": MSR
+  "mozambique": MOZ
+  "namibie": NAM
+  "nationalite non precisee": XXX
+  "nauru": NRU
+  "nepal": NPL
+  "nicaragua": NIC
+  "niger": NER
+  "nigeria": NGA
+  "niue": NIU
+  "norvege": NOR
+  "nouvelle-caledonie": NCL
+  "nouvelle-zelande": NZL
+  "oman": OMN
+  "ordre souverain de malte": XOM
+  "organisation des etats de la caraibe orientale": XES
+  "organisation des nations unies": UNO
+  "ouganda": UGA
+  "ouzbekistan": UZB
+  "pakistan": PAK
+  "palaos": PLW
+  "palestine": PSE
+  "panama": PAN
+  "papouasie-nouvelle-guinee": PNG
+  "paraguay": PRY
+  "pays-bas": NLD
+  "perou": PER
+  "philippines": PHL
+  "pologne": POL
+  "polynesie francaise": PYF
+  "porto rico": PRI
+  "portugal": PRT
+  "qatar": QAT
+  "republique centrafricaine": CAF
+  "republique democratique du congo": COD
+  "republique dominicaine": DOM
+  "roumanie": ROU
+  "royaume-uni": GBR
+  "russie": RUS
+  "rwanda": RWA
+  "sahara occidental": ESH
+  "saint-barthelemy": BLM
+  "saint-christophe-et-nieves": KNA
+  "saint-marin": SMR
+  "saint-martin": MAF
+  "saint-pierre-et-miquelon": SPM
+  "saint-vincent-et-les-grenadines": VCT
+  "sainte-helene, ascension et tristan da cunha": SHN
+  "sainte-lucie": LCA
+  "salvador": SLV
+  "samoa": WSM
+  "samoa americaines": ASM
+  "sao tome-et-principe": STP
+  "senegal": SEN
+  "serbie": SRB
+  "seychelles": SYC
+  "sierra leone": SLE
+  "singapour": SGP
+  "slovaquie": SVK
+  "slovenie": SVN
+  "somalie": SOM
+  "soudan": SDN
+  "soudan du sud": SSD
+  "sri lanka": LKA
+  "suede": SWE
+  "suriname": SUR
+  "svalbard et jan mayen": SJM
+  "syrie": SYR
+  "tadjikistan": TJK
+  "taiwan": TWN
+  "tanzanie": TZA
+  "tchad": TCD
+  "tchequie": CZE
+  "terres australes et antarctiques francaises": ATF
+  "territoire britannique de l'ocean indien": IOT
+  "thailande": THA
+  "timor oriental": TLS
+  "togo": TGO
+  "tokelau": TKL
+  "tonga": TON
+  "trinite-et-tobago": TTO
+  "tunisie": TUN
+  "turkmenistan": TKM
+  "turquie": TUR
+  "tuvalu": TUV
+  "ukraine": UKR
+  "union europeenne": EUE
+  "union parlementaire": XMP
+  "uruguay": URY
+  "vanuatu": VUT
+  "vatican": VAT
+  "venezuela": VEN
+  "viet nam": VNM
+  "wallis-et-futuna": WLF
+  "yemen": YEM
+  "zambie": ZMB
+  "zimbabwe": ZWE

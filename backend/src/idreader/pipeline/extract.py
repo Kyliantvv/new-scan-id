@@ -28,7 +28,12 @@ from rapidfuzz import fuzz
 from idreader.pipeline.dates import ParsedDate, matches_mrz, parse_dates
 from idreader.pipeline.mrz.decode import MrzResult
 from idreader.pipeline.mrz.names import names_match
-from idreader.pipeline.reference import viz_labels
+from idreader.pipeline.reference import (
+    doc_number_patterns,
+    mrz_state_codes,
+    nationality_words,
+    viz_labels,
+)
 from idreader.pipeline.viz_ocr import Slot, VizOcr
 
 LABEL_MIN_SIMILARITY = 88.0  # rapidfuzz 0–100, à calibrer sur golden
@@ -152,6 +157,34 @@ def plausible_value(field: str, text: str) -> bool:
         if fold(text) in DOC_CODE_WORDS or re.search(r"[()\[\]{}]", text):
             return False
     return not (field == "nationality" and (any(c.isdigit() for c in text) or len(text) > 40))
+
+
+@lru_cache(maxsize=1)
+def _distinctive_number_patterns() -> tuple[re.Pattern[str], ...]:
+    """Motifs de n° assez rares pour être reconnus sans libellé (les autres, comme 9 chiffres,
+    se confondent avec n'importe quel nombre du document)."""
+    table = doc_number_patterns()
+    return tuple(table[k] for k in (("FRA", "P"), ("ITA", "C")) if k in table)
+
+
+def nationality_code(text: str) -> str | None:
+    """Nationalité imprimée (« Française », « French », « FRA », « Pays-Bas ») → code ICAO.
+
+    None si le texte n'est reconnu ni comme code, ni comme adjectif, ni comme nom de pays :
+    mieux vaut garder le texte lu que deviner un code (règle 3 de CLAUDE.md).
+    """
+    folded = fold(text)
+    if not folded:
+        return None
+    words = {fold(k): v for k, v in nationality_words().items()}
+    if folded in words:
+        return words[folded]
+    code = text.strip().upper()
+    if len(code) <= 3 and code.isalpha() and code in mrz_state_codes():
+        return code
+    # « Nationalité : FRANCAISE / FRENCH » ou « FRANCAISE 12 » : un seul code distinct dans le texte
+    found = {words[f] for part in text.split("/") if (f := fold(part)) in words}
+    return found.pop() if len(found) == 1 else None
 
 
 def is_non_field_label(text: str) -> bool:
@@ -464,6 +497,14 @@ def extract(viz: VizOcr, mrz: MrzResult | None, *, today: date) -> Extraction:
         compact = re.sub(r"\s", "", text.upper())
         if compact:
             fields["document_number"] = _field("document_number", lslots, compact, "label")
+    if "document_number" not in fields and mrz is None:
+        # Libellé illisible : un texte isolé au format d'un n° très caractéristique (passeport
+        # français 12AB34567, CIE italienne CA12345AB) est le n° de document.
+        for s in value_slots:
+            compact = re.sub(r"\s", "", s.text.upper())
+            if any(p.fullmatch(compact) for p in _distinctive_number_patterns()):
+                fields["document_number"] = _field("document_number", [s], compact, "format")
+                break
 
     # H.2 / H.3 — autres champs ancrés sur leur libellé
     for field in ("place_of_birth", "authority", "usage_name", "personal_number", "nationality"):
@@ -474,6 +515,8 @@ def extract(viz: VizOcr, mrz: MrzResult | None, *, today: date) -> Extraction:
         text = " ".join(text.split())
         if field == "usage_name":
             text = USAGE_PREFIX.sub("", text)
+        if field == "nationality" and (code := nationality_code(text)) is not None:
+            text = code
         if text:
             fields[field] = _field(field, lslots, text, "label")
     if mrz is None:
