@@ -1,7 +1,8 @@
 """Exécution des jobs par type.
 
-Phase 0 : `process_file` est un job factice qui vérifie le fichier stocké (présence, empreinte)
-et simule l'avancement. Le pipeline A→I le remplacera en phase 1.
+`process_file` exécute le pipeline (`worker/process.py`). Le job factice de la phase 0
+(vérification du fichier, avancement simulé) reste disponible pour les tests du worker
+(`IDR_DUMMY_PIPELINE=true`).
 """
 
 from __future__ import annotations
@@ -83,6 +84,15 @@ def process_file_dummy(ctx: JobContext) -> None:
         ctx.report(0.1 + 0.9 * (i + 1) / steps, "dummy")
 
 
+def process_file(ctx: JobContext) -> None:
+    if ctx.settings.dummy_pipeline:
+        process_file_dummy(ctx)
+        return
+    from idreader.worker.process import process_file as run  # import différé : moteurs lourds
+
+    run(ctx)
+
+
 HANDLERS: dict[str, Handler] = {
-    JobType.PROCESS_FILE: process_file_dummy,
+    JobType.PROCESS_FILE: process_file,
 }

@@ -151,15 +151,37 @@ def bench(
         bool, typer.Option("--compare/--no-compare", help="Écart avec le dernier résultat")
     ] = True,
 ) -> None:
-    """Banc d'essai de l'étape E (MRZ). Rapport dans bench/results/."""
+    """Banc d'essai. `synthetic` : étape E (MRZ) ; `documents` : pipeline complet sur des
+    documents UTO synthétiques. Rapport dans bench/results/."""
     from idreader.bench.runner import bench_synthetic
-    from idreader.engines.registry import available_engines
+    from idreader.engines.registry import available_engines, available_viz_engines
 
     settings = get_settings()
-    if set_name != "synthetic":
-        typer.echo("Seul le jeu « synthetic » existe en phase 1a.", err=True)
-        raise typer.Exit(2)
     only = [e.strip() for e in engines.split(",") if e.strip()] or None
+    if set_name == "documents":
+        from idreader.bench.doc_runner import bench_documents
+        from idreader.pipeline.analyze import Engines
+
+        eng = Engines(
+            mrz=available_engines(settings, only), viz=available_viz_engines(settings, only)
+        )
+        typer.echo(f"Moteurs actifs : {', '.join(eng.names) or 'aucun'}")
+        _, md_path, payload = bench_documents(
+            settings, eng, count=count, seed=seed, compare=compare
+        )
+        s = payload["summary"]
+        typer.echo(
+            f"Champs obligatoires tous justes : {s['mandatory_all_correct_pct']} % · noms "
+            f"accentués : {s['accented_names_correct_pct']} % · auto-validation : "
+            f"{s['automation_pct']} % · erreurs auto-validées : {len(s['silent_errors'])}"
+        )
+        if payload["warning"]:
+            typer.echo("ATTENTION : résultats non représentatifs (voir le rapport).")
+        typer.echo(f"Rapport : {md_path}")
+        return
+    if set_name != "synthetic":
+        typer.echo("Jeux disponibles : synthetic, documents (golden en phase 1b).", err=True)
+        raise typer.Exit(2)
     active = available_engines(settings, only)
     typer.echo(f"Moteurs actifs : {', '.join(e.name for e in active) or 'aucun'}")
     _, md_path, payload = bench_synthetic(settings, active, count=count, seed=seed, compare=compare)
@@ -172,3 +194,66 @@ def bench(
     if payload["warning"]:
         typer.echo("ATTENTION : résultats non représentatifs (voir le rapport).")
     typer.echo(f"Rapport : {md_path}")
+
+
+@app.command()
+def analyze(
+    path: Annotated[str, typer.Argument(help="Fichier PDF, JPG ou PNG")],
+    debug: Annotated[
+        bool, typer.Option("--debug", help="Écrire recadrages et artefacts dans data/debug/")
+    ] = False,
+    show_values: Annotated[
+        bool, typer.Option("--show-values", help="Afficher les valeurs lues (données personnelles)")
+    ] = False,
+    engines: Annotated[str, typer.Option(help="Moteurs (séparés par des virgules)")] = "",
+) -> None:
+    """Pipeline A→L sur un fichier, sans base ni file de jobs."""
+    from datetime import date, datetime
+    from pathlib import Path
+
+    from idreader.engines.registry import available_engines, available_viz_engines
+    from idreader.pipeline.analyze import Engines, analyze_file
+    from idreader.worker.process import _write_json, _write_png
+
+    settings = get_settings()
+    setup_logging()
+    only = [e.strip() for e in engines.split(",") if e.strip()] or None
+    eng = Engines(mrz=available_engines(settings, only), viz=available_viz_engines(settings, only))
+    typer.echo(f"Moteurs actifs : {', '.join(eng.names) or 'aucun'}")
+    fa = analyze_file(
+        Path(path),
+        eng,
+        today=date.today(),
+        threshold=settings.auto_validate_threshold,
+        allow_specimen=settings.allow_specimen,
+    )
+    out = settings.data_dir / "debug" / f"{datetime.now():%Y%m%d-%H%M%S}"
+    for ca in fa.crops:
+        r = ca.result
+        typer.echo(
+            f"\nPage {ca.page_index + 1}, document {ca.index + 1} : {r.status.value}"
+            f" · {r.doc_type.value} · {ca.physical_format} · face {ca.side}"
+            f" · confiance {r.confidence:.2f}"
+        )
+        for reason in r.reasons:
+            typer.echo(f"  - {reason.label}" + (f" ({reason.field})" if reason.field else ""))
+        for name, f in r.fields.items():
+            if f.status.value == "missing":
+                continue
+            value = f" = {f.value}" if show_values else ""
+            typer.echo(f"    {name:<16} {f.status.value:<9} {f.confidence:.2f}{value}")
+        if debug:
+            d = out / f"p{ca.page_index + 1}_d{ca.index + 1}"
+            _write_png(d / "crop.png", ca.image)
+            for stage, model in (
+                ("mrz", ca.mrz),
+                ("viz", ca.viz),
+                ("extract", ca.extraction),
+                ("classify", ca.classification),
+                ("result", ca.result),
+            ):
+                _write_json(d / f"{stage}.json", model)
+    if not fa.crops:
+        typer.echo("Aucun document détecté.")
+    if debug:
+        typer.echo(f"\nArtefacts : {out}")

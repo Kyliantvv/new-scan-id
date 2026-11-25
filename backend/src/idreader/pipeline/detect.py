@@ -112,6 +112,17 @@ def _quad_from_contour(contour: MatLike) -> FloatArray | None:
     return None
 
 
+def _inside(inner: FloatArray, outer: FloatArray) -> bool:
+    """`inner` est-il un élément d'`outer` (photo d'identité, encadré) ? Centre à l'intérieur
+    et aire au plus moitié : un document ne contient jamais un autre document."""
+    cx, cy = inner.mean(axis=0)
+    contour = outer.reshape(-1, 1, 2).astype(np.float32)
+    return bool(
+        cv2.pointPolygonTest(contour, (float(cx), float(cy)), False) >= 0
+        and cv2.contourArea(inner) <= 0.5 * cv2.contourArea(outer)
+    )
+
+
 def size_class(aspect: float) -> SizeClass:
     if not MIN_ASPECT <= aspect <= MAX_ASPECT:
         return SizeClass.UNKNOWN
@@ -148,7 +159,9 @@ def detect_documents(
     found.sort(key=lambda x: -x[0])
     kept: list[tuple[float, FloatArray]] = []
     for score, quad in found:
-        if all(_iou(quad, k) <= NMS_IOU for _, k in kept):
+        if all(_iou(quad, k) <= NMS_IOU for _, k in kept) and not any(
+            _inside(quad, k) for _, k in kept
+        ):
             kept.append((score, quad))
         if len(kept) == max_candidates:
             break

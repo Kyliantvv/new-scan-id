@@ -20,6 +20,7 @@ def settings(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[Settin
     monkeypatch.setenv("IDR_SECRET_KEY", TEST_SECRET)
     monkeypatch.setenv("IDR_COOKIE_SECURE", "false")
     monkeypatch.setenv("IDR_DUMMY_JOB_SECONDS", "0")
+    monkeypatch.setenv("IDR_DUMMY_PIPELINE", "true")
     monkeypatch.setenv("IDR_SSE_POLL_SECONDS", "0.05")
     monkeypatch.setenv("IDR_IDVISION_PATH", str(tmp_path / "absent-idvision"))
     monkeypatch.setenv("IDR_FRONTEND_DIST", str(tmp_path / "absent-dist"))

@@ -222,7 +222,7 @@ def environment(engines: list[OcrEngine], settings: Settings) -> dict[str, Any]:
             except (OSError, IndexError):
                 env["tesseract_version"] = None
         if e.name == "ppocr":
-            env["ppocr_model"] = "PP-OCRv6 small rec (ONNX)"
+            env["ppocr_model"] = "PP-OCRv6 small rec (MRZ) ; medium det + rec (zone visuelle), ONNX"
     return env
 
 
@@ -305,13 +305,18 @@ def bench_synthetic(
     stem = f"{started:%Y-%m-%d}_{payload['git']}_synthetic"
     previous = sorted(p for p in results_dir.glob("*_synthetic.json") if p.stem != stem)
     json_path = results_dir / f"{stem}.json"
-    json_path.write_text(json.dumps(payload, indent=1, ensure_ascii=False), encoding="utf-8")
+    write_lf(json_path, json.dumps(payload, indent=1, ensure_ascii=False))
     baseline = (
         json.loads(previous[-1].read_text(encoding="utf-8")) if compare and previous else None
     )
     md_path = results_dir / f"{stem}.md"
-    md_path.write_text(markdown(payload, baseline), encoding="utf-8")
+    write_lf(md_path, markdown(payload, baseline))
     return json_path, md_path, payload
+
+
+def write_lf(path: Path, text: str) -> None:
+    """Rapports versionnés : fins de ligne LF quelle que soit la plate-forme."""
+    path.write_text(text, encoding="utf-8", newline="\n")
 
 
 def _fmt(v: Any) -> str:

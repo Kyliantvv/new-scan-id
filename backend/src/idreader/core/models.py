@@ -53,6 +53,7 @@ class DocumentStatus(StrEnum):
 class FieldStatus(StrEnum):
     OK = "ok"
     REPAIRED = "repaired"
+    UNCERTAIN = "uncertain"  # une seule source, sans preuve : à vérifier
     CONFLICT = "conflict"
     MISSING = "missing"
     MANUAL = "manual"

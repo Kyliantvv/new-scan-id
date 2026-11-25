@@ -242,11 +242,12 @@ HF_HUB_OFFLINE=1
 | Pillow | images (en phase 0 : images synthétiques des tests seulement) | MIT-CMU |
 | pypdfium2 | rendu PDF | Apache-2.0 / BSD |
 | onnxruntime (+ flatbuffers, protobuf, packaging) | inférence des modèles PP-OCR (phase 1a : appel direct, sans RapidOCR) | MIT (Apache-2.0, BSD-3, Apache-2.0/BSD) |
-| rapidocr (phase 1b/2, détection + reconnaissance de la zone visuelle) | OCR PP-OCR | Apache-2.0 |
-| Modèles PP-OCRv6 / v5 | OCR | Apache-2.0 |
+| rapidocr | non utilisé à ce stade : la zone visuelle appelle aussi PP-OCRv6 directement par onnxruntime (détection DB + reconnaissance, `engines/ppocr.py`) | Apache-2.0 |
+| Modèles PP-OCRv6 / v5 | OCR (MRZ : small rec 21 Mo ; zone visuelle : medium det 62 Mo + medium rec 77 Mo) | Apache-2.0 |
 | Tesseract 5 | OCR MRZ | Apache-2.0 |
 | mrz.traineddata (DoubangoTelecom/tesseractMRZ) | modèle MRZ | BSD-3-Clause (vérifié le 2026-11-24, fichier LICENSE du dépôt) |
 | Police OCR-B `ocrb10.otf` (CTAN fonts/ocr-b-outline) | rendu des MRZ synthétiques (banc, tests) ; jamais servie au front | libre sans limitation (« freely use, modify, and/or distribute »), CTAN other-free |
+| Police Roboto (google/fonts, `apache/roboto`) | rendu de la zone visuelle des documents synthétiques UTO (banc, tests) ; jamais servie au front | Apache-2.0 |
 | rapidfuzz | similarité de chaînes | MIT |
 | anyascii | translittération | ISC |
 | iso3166 | codes pays alpha-2 / alpha-3 | MIT |

@@ -48,6 +48,11 @@ class Settings(BaseSettings):
     max_attempts: int = 3
     worker_poll_seconds: float = 1.0
     dummy_job_seconds: float = 2.0
+    # Tests du worker : job factice de la phase 0 à la place du pipeline.
+    dummy_pipeline: bool = False
+    # Démonstrations sur les documents synthétiques UTO : lève le motif SPECIMEN_DOCUMENT.
+    # Ne jamais activer en production (docs/DECISIONS.md).
+    allow_specimen: bool = False
 
     # SSE
     sse_poll_seconds: float = 1.0
