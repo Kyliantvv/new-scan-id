@@ -1,17 +1,25 @@
 """E.1 — Localisation de la bande MRZ et découpage en lignes.
 
-Phase 1a : repli morphologique OpenCV seul (gradient horizontal, fermeture, bandes larges et
-denses dans le bas du document). La localisation par les lignes OCR de Vision vient en
-phase 1b.
+Deux localisations, dans cet ordre :
+1. morphologique OpenCV (gradient horizontal, fermeture, bandes larges et denses dans le bas
+   du document) ;
+2. repli par les lignes OCR (`locate_band_from_lines`) : les lignes de texte d'un moteur de
+   détection (Vision, PP-OCR) qui ressemblent à une MRZ. Sur des scans de passeports pris dans
+   une page entière (marges, reflets, fond chargé), la morphologie échoue et l'OCR trouve
+   les lignes sans difficulté.
 """
 
 from __future__ import annotations
+
+import re
+from collections.abc import Sequence
 
 import cv2
 import numpy as np
 from cv2.typing import MatLike
 from pydantic import BaseModel, ConfigDict
 
+from idreader.engines.base import TextLine
 from idreader.pipeline.ingest import RGBImage
 
 WORK_WIDTH = 1200
@@ -30,7 +38,7 @@ class Band(BaseModel):
     y: int
     width: int
     height: int
-    source: str  # morphology | whole_image
+    source: str  # morphology | whole_image | ocr_lines
 
 
 def _gray(image: RGBImage) -> MatLike:
@@ -199,3 +207,67 @@ def deskew(band: RGBImage) -> RGBImage:
         band, matrix, (w, h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE
     )
     return np.ascontiguousarray(out, dtype=np.uint8)
+
+
+# --- Repli par les lignes OCR -----------------------------------------------------------------
+
+MRZ_LINE_LENGTHS = (30, 36, 44)  # TD1, TD2 / MRV-B, TD3 / MRV-A (ICAO 9303)
+MIN_MRZ_CHARS = 26  # une ligne MRZ lue avec quelques caractères en moins reste reconnue
+MRZ_ALPHABET = re.compile(r"^[A-Z0-9<]+$")
+_FILLER_LOOKALIKES = str.maketrans({"«": "<", "‹": "<", "〈": "<", "＜": "<"})
+_MRZ_START = ("P<", "I<", "V<", "A<", "C<", "ID", "IP", "PP")
+STACK_GAP = 2.5  # écart maximal entre deux lignes MRZ, en hauteurs de ligne
+SAME_EDGE = 0.08  # bords gauches alignés à 8 % de la largeur près
+SAME_LENGTH = 0.15  # longueurs alignées à 15 % près
+
+
+def normalize_mrz_text(text: str) -> str:
+    """Texte réduit à l'alphabet MRZ : majuscules, sans espaces, chevrons homogènes."""
+    return re.sub(r"\s+", "", text.upper().translate(_FILLER_LOOKALIKES))
+
+
+def looks_like_mrz_line(text: str) -> bool:
+    """Ligne de MRZ plausible : longue, presque entièrement dans l'alphabet MRZ, avec des
+    chevrons ou un début de code de document (ICAO 9303 partie 3)."""
+    t = normalize_mrz_text(text)
+    if len(t) < MIN_MRZ_CHARS:
+        return False
+    in_alphabet = sum(1 for c in t if c in "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789<")
+    if in_alphabet / len(t) < 0.9:
+        return False
+    return t.count("<") >= 2 or t.startswith(_MRZ_START)
+
+
+def locate_band_from_lines(lines: Sequence[TextLine], width: int, height: int) -> Band | None:
+    """Bande MRZ d'après les lignes OCR : la pile de 2 ou 3 lignes MRZ la plus basse."""
+    cands = []
+    for line in lines:
+        if looks_like_mrz_line(line.text):
+            x, y, w, h = line.quad.bbox
+            if h > 0 and w / max(h, 1) >= 6:  # une ligne MRZ est très allongée
+                cands.append((x, y, w, h))
+    cands.sort(key=lambda b: b[1])
+    stacks: list[list[tuple[float, float, float, float]]] = []
+    for c in cands:
+        for stack in stacks:
+            last = stack[-1]
+            gap = c[1] - (last[1] + last[3])
+            aligned = abs(c[0] - last[0]) <= SAME_EDGE * width
+            similar = abs(c[2] - last[2]) <= SAME_LENGTH * max(c[2], last[2])
+            if aligned and similar and -0.5 * last[3] <= gap <= STACK_GAP * max(c[3], last[3]):
+                stack.append(c)
+                break
+        else:
+            stacks.append([c])
+    stacks = [s for s in stacks if 2 <= len(s) <= 3]
+    if not stacks:
+        return None
+    best = max(stacks, key=lambda s: s[0][1])  # la plus basse
+    x0 = min(b[0] for b in best)
+    y0 = min(b[1] for b in best)
+    x1 = max(b[0] + b[2] for b in best)
+    y1 = max(b[1] + b[3] for b in best)
+    mx, my = MARGIN_X * width, MARGIN_Y * (y1 - y0)
+    bx0, by0 = max(0, round(x0 - mx)), max(0, round(y0 - my))
+    bx1, by1 = min(width, round(x1 + mx)), min(height, round(y1 + my))
+    return Band(x=bx0, y=by0, width=bx1 - bx0, height=by1 - by0, source="ocr_lines")

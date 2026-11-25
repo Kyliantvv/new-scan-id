@@ -142,18 +142,21 @@ def _rotate(image: RGBImage, degrees: int) -> RGBImage:
 
 
 def _orient_by_mrz(
-    crop: RGBImage, engines: Sequence[OcrEngine], today: date
+    crop: RGBImage,
+    engines: Sequence[OcrEngine],
+    today: date,
+    line_engines: Sequence[OcrEngine] = (),
 ) -> tuple[int, RGBImage, MrzStage]:
     h, w = crop.shape[:2]
     order = [0, 180] if w >= h else [90, 270, 0, 180]
     first = (order[0], _rotate(crop, order[0]))
-    stage = run_mrz(first[1], engines, today=today)
+    stage = run_mrz(first[1], engines, today=today, line_engines=line_engines)
     result = (first[0], first[1], stage)
     if stage.result is not None or stage.failure == "NO_ENGINE":
         return result
     for degrees in order[1:]:
         rotated = _rotate(crop, degrees)
-        candidate = run_mrz(rotated, engines, today=today)
+        candidate = run_mrz(rotated, engines, today=today, line_engines=line_engines)
         if candidate.result is not None:
             return degrees, rotated, candidate
     return result
@@ -175,7 +178,7 @@ def analyze_crop(
 ) -> CropAnalysis:
     ms: dict[str, float] = {}
     t0 = time.perf_counter()
-    rotation, image, stage = _orient_by_mrz(crop.image, engines.mrz, today)
+    rotation, image, stage = _orient_by_mrz(crop.image, engines.mrz, today, engines.viz)
     ms["mrz"] = (time.perf_counter() - t0) * 1000
     mrz = stage.result
     classification = classify_mrz(mrz) if mrz is not None else None

@@ -108,3 +108,26 @@ def test_passport_end_to_end(tmp_path: Path) -> None:
     # Un seul moteur sous Windows : jamais de validation automatique.
     if engines.names == ["ppocr"]:
         assert crop.result.status.value == "to_review"
+
+
+@needs_models
+def test_passport_mrz_found_by_ocr_lines_when_morphology_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Scan où la morphologie ne trouve pas la MRZ (marges, reflets) : le repli par les lignes
+    OCR la retrouve et la zone visuelle est confirmée par elle."""
+    import idreader.pipeline.mrz.stage as stage_mod
+
+    monkeypatch.setattr(stage_mod, "locate_band", lambda _image: None)
+    (case,) = generate_documents(
+        tmp_path, count=1, seed=3, models_dir=SETTINGS.models_dir, today=TODAY, a4_share=0
+    )
+    engines = Engines(mrz=available_engines(SETTINGS), viz=available_viz_engines(SETTINGS))
+    fa = analyze_file(
+        tmp_path / case.images[0], engines, today=TODAY, threshold=0.95, allow_specimen=True
+    )
+    (crop,) = fa.crops
+    assert crop.has_mrz and crop.mrz.band is not None and crop.mrz.band.source == "ocr_lines"
+    fields = {k: f.value for k, f in crop.result.fields.items()}
+    for name in ("surname", "given_names", "date_of_birth", "document_number"):
+        assert fields[name] == case.fields[name], name
