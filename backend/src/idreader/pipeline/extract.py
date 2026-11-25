@@ -40,7 +40,24 @@ SEX_TOKENS = {
     "M": "M", "F": "F", "X": "X", "M/M": "M", "F/F": "F", "Ж": "F", "М": "M", "男": "M", "女": "F",
     "H": "M",  # « Homme » abrégé sur certains titres français
 }  # fmt: skip
-USAGE_PREFIX = re.compile(r"^\s*(?:ÉP(?:OUSE)?\.?|EP(?:OUSE)?\.?|VVE\.?)\s+", re.IGNORECASE)
+USAGE_PREFIX = re.compile(r"^\s*(?:[ÉE]P(?:OUSE|SE)?\.?|VVE\.?|VEUVE|USAGE)\s+", re.IGNORECASE)
+# Marque de nom d'usage au milieu d'un texte : « DUPONT ép. MARTIN », « DUPONT usage MARTIN ».
+USAGE_MARK = re.compile(r"(?<!\w)(?:[ée]p(?:ouse|se)?|usage|vve|veuve)\.?(?!\w)\s*", re.IGNORECASE)
+# Numérotation de libellé lue seule : « (2) », « {2} », « [3] », « (2 », « (6Z) » (OCR : 2→6Z…).
+NUMBERING_ONLY = re.compile(
+    r"^\s*[(\[{]\s*[0-9A-Za-z]{1,3}\s*[)\]}]?\s*$|^\s*[0-9A-Za-z]{1,3}\s*[)\]}]\s*$"
+)
+NUMBERING_ANYWHERE = re.compile(r"[(\[{]\s*\d{1,2}\s*[a-z]?\s*[)\]}]", re.IGNORECASE)
+# Libellés qui ne sont pas un champ extrait mais dont la valeur ne doit jamais devenir un nom :
+# « Type / Type » (valeur « P »), « Code pays », « Catégorie ».
+NON_FIELD_LABELS = frozenset(
+    {
+        "TYPE", "TYPE TYPE", "CODE", "CODE PAYS", "CODE DU PAYS", "COUNTRY CODE", "CODE COUNTRY",
+        "CODE PAYS COUNTRY CODE", "CAT", "CATEGORIE", "CATEGORY", "PASSEPORT", "PASSPORT",
+    }
+)  # fmt: skip
+DOC_CODE_WORDS = frozenset({"P", "PP", "ID", "I", "PASSEPORT", "PASSPORT", "CNI", "TYPE", "FRA"})
+NAME_FIELDS = ("surname", "given_names", "usage_name")
 LABEL_FIELDS = (
     "surname", "given_names", "usage_name", "date_of_birth", "place_of_birth", "sex",
     "nationality", "document_number", "date_of_issue", "date_of_expiry", "authority",
@@ -89,9 +106,59 @@ def fold(text: str) -> str:
     return " ".join(base.split())
 
 
+_NUM_HEAD = r"^\s*[(\[{]?\d{1,2}[a-z]?[.)\]}]?\s*"
+# « Prénoms (2) », « (2 », « {2} », « [2] », « (Z) », « (6Z) » en fin de libellé (OCR).
+_NUM_TAIL = r"\s*[(\[{]\s*[0-9A-Za-z]{1,3}\s*[)\]}]?\s*$"
+
+
 def _strip_numbering(segment: str) -> str:
-    """« 4. Nom », « (1) Nom », « 4a Nom » → « Nom »."""
-    return re.sub(r"^\s*\(?\d{1,2}[a-z]?[.)]?\s*|\s*\(\d{1,2}\)\s*$", "", segment).strip()
+    """« 4. Nom », « (1) Nom », « 4a Nom », « Prénoms {2} », « Prénoms (2 » → le libellé seul."""
+    return re.sub(f"{_NUM_HEAD}|{_NUM_TAIL}", "", segment).strip()
+
+
+def is_numbering_only(text: str) -> bool:
+    """« (2) », « (6Z) », « {2} » : numéro de libellé lu seul, jamais une valeur."""
+    return bool(NUMBERING_ONLY.match(text))
+
+
+def split_usage(text: str) -> tuple[str, str | None]:
+    """« DUPONT ép. MARTIN » → (« DUPONT », « MARTIN ») ; sans marque → (texte, None)."""
+    m = USAGE_MARK.search(text)
+    if m is None:
+        return text, None
+    base = text[: m.start()].strip(" ,;:-")
+    rest = text[m.end() :].strip(" ,;:-")
+    return base, rest or None
+
+
+def _upper(value: str) -> str:
+    """Majuscules sans transformer « ß » en « SS » (la longueur doit rester celle du texte lu)."""
+    return "".join(c if c == "ß" else c.upper() for c in value)
+
+
+def plausible_value(field: str, text: str) -> bool:
+    """Garde-fou sur une valeur candidate : refuse ce qui n'est manifestement pas la valeur du
+    champ (numéro de libellé, libellé, code de document, chiffres dans un nom…). Mieux vaut un
+    champ vide qu'une valeur fausse (règle 3 de CLAUDE.md)."""
+    text = text.strip()
+    if not text or is_numbering_only(text) or NUMBERING_ANYWHERE.search(text):
+        return False
+    name, rest = label_field(text)
+    if name is not None and not rest:
+        return False  # le texte est lui-même un libellé
+    if field in NAME_FIELDS:
+        if sum(c.isalpha() for c in text) < 2 or any(c.isdigit() for c in text):
+            return False
+        if fold(text) in DOC_CODE_WORDS or re.search(r"[()\[\]{}]", text):
+            return False
+    return not (field == "nationality" and (any(c.isdigit() for c in text) or len(text) > 40))
+
+
+def is_non_field_label(text: str) -> bool:
+    """« Type / Type », « Code pays », « Type : P » : libellé d'un champ qu'on n'extrait pas."""
+    head = text.split(":")[0]
+    folded = fold(_strip_numbering(head))
+    return folded in NON_FIELD_LABELS
 
 
 @lru_cache(maxsize=1)
@@ -115,7 +182,9 @@ def label_field(text: str) -> tuple[str | None, str]:
         return None, text
     votes: dict[str, int] = {}
     for seg in segments:
-        name = _match_label(_strip_numbering(seg))
+        name = _match_label(_strip_numbering(seg)) or _match_label(
+            re.sub(r"\s+\d{1,2}$", "", seg).strip()
+        )
         if name is None:
             break
         votes[name] = votes.get(name, 0) + 1
@@ -173,7 +242,7 @@ def _right(label: Slot, value: Slot) -> float | None:
 def _field(name: str, slots: list[Slot], value: str, method: str, **kw: object) -> VizField:
     return VizField(
         name=name,
-        value=value,
+        value=_upper(value) if name in NAME_FIELDS else value,
         method=method,
         slot_ids=[s.id for s in slots],
         engines=sorted({r.engine for s in slots for r in s.readings}),
@@ -198,6 +267,9 @@ def _name_variants(slot: Slot) -> list[str]:
                 cand = _clean_name(cand)
                 if cand and cand not in out:
                     out.append(cand)
+                base, usage = split_usage(cand)
+                if usage and base and base not in out:
+                    out.append(base)  # « DUPONT ép. MARTIN » : le nom est DUPONT
     return out
 
 
@@ -239,31 +311,63 @@ def extract(viz: VizOcr, mrz: MrzResult | None, *, today: date) -> Extraction:
                 inline[s.id] = (name, rest)
     is_label = {i for ids in label_slots.values() for i in ids if i not in inline}
 
+    # Emplacements qui ne sont jamais une valeur : numéros de libellé lus seuls (« (2) »,
+    # « (6Z) »), libellés « Type / Code pays » et la valeur qui les suit (« P », « FRA »).
+    noise = {s.id for s in slots if is_numbering_only(s.text)}
+    non_field = {s.id for s in slots if is_non_field_label(s.text)}
+    blocked = is_label | noise | non_field
+    for sid in non_field:
+        if ":" in by_id[sid].text and by_id[sid].text.split(":", 1)[1].strip():
+            continue  # « Type : P » : la valeur est dans le même cadre
+        near = [
+            (g, s)
+            for s in slots
+            if s.id not in blocked and (g := _below(by_id[sid], s)) is not None
+        ] or [
+            (g, s)
+            for s in slots
+            if s.id not in blocked and (g := _right(by_id[sid], s)) is not None
+        ]
+        if near:
+            blocked.add(min(near, key=lambda x: x[0])[1].id)
+    # « DUPONT ép. MARTIN » : le nom d'usage ne va jamais dans les prénoms.
+    usage_slots: dict[int, tuple[str, str]] = {}
+    for s in slots:
+        if s.id in blocked:
+            continue
+        base, usage = split_usage(s.text)
+        if usage and not label_field(s.text)[0]:
+            usage_slots[s.id] = (base, usage)
+    blocked_for_given = blocked | set(usage_slots)
+
     def value_for(field: str) -> tuple[list[Slot], str] | None:
-        """H.2 : valeur sous le libellé, sinon à droite, sinon sur la même ligne."""
+        """H.2 : valeur sous le libellé, sinon à droite, sinon sur la même ligne. Les valeurs
+        invraisemblables (numéro de libellé, libellé, « P »…) sont écartées au profit du
+        candidat suivant."""
+        banned = blocked_for_given if field == "given_names" else blocked
         for label_id in label_slots.get(field, []):
             if label_id in inline:
-                return [by_id[label_id]], inline[label_id][1]
+                rest = inline[label_id][1]
+                if plausible_value(field, split_usage(rest)[0] if field in NAME_FIELDS else rest):
+                    return [by_id[label_id]], rest
+                continue
             label = by_id[label_id]
-            below = [
-                (g, s)
-                for s in slots
-                if s.id not in is_label and (g := _below(label, s)) is not None
-            ]
-            if below:
-                best = min(below, key=lambda x: x[0])[1]
-                return [best], best.text
-            right = [
-                (g, s)
-                for s in slots
-                if s.id not in is_label and (g := _right(label, s)) is not None
-            ]
-            if right:
-                best = min(right, key=lambda x: x[0])[1]
-                return [best], best.text
+            for geometry in (_below, _right):
+                found = sorted(
+                    (
+                        (g, s)
+                        for s in slots
+                        if s.id not in banned and (g := geometry(label, s)) is not None
+                    ),
+                    key=lambda x: x[0],
+                )
+                for _g, cand in found:
+                    text = split_usage(cand.text)[0] if field == "surname" else cand.text
+                    if plausible_value(field, text):
+                        return [cand], text
         return None
 
-    value_slots = [s for s in slots if s.id not in is_label]
+    value_slots = [s for s in slots if s.id not in blocked]
 
     # H.1 — noms guidés par la MRZ
     if mrz is not None and "surname" in mrz.fields:
@@ -378,12 +482,17 @@ def extract(viz: VizOcr, mrz: MrzResult | None, *, today: date) -> Extraction:
                 lslots, text = labelled
                 if text := _clean_name(text):
                     fields[field] = _field(field, lslots, text, "label")
-    # « ép. MARTIN » écrit à la suite du nom, sans libellé dédié
+    # « ép. MARTIN » / « DUPONT ép. MARTIN » écrit à la suite du nom, sans libellé dédié
     if "usage_name" not in fields:
-        for s in value_slots:
-            m = USAGE_PREFIX.match(s.text)
-            if m:
-                fields["usage_name"] = _field("usage_name", [s], s.text[m.end() :].strip(), "type")
+        for sid, (_base, usage) in usage_slots.items():
+            if plausible_value("usage_name", usage):
+                fields["usage_name"] = _field("usage_name", [by_id[sid]], usage, "type")
+                break
+    # Nom lu sans MRZ dans « DUPONT ép. MARTIN » quand aucun libellé « Nom » n'a donné de valeur.
+    if mrz is None and "surname" not in fields:
+        for sid, (base, _usage) in usage_slots.items():
+            if base and plausible_value("surname", base):
+                fields["surname"] = _field("surname", [by_id[sid]], base, "type")
                 break
 
     # Sexe

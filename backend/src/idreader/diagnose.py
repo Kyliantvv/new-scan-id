@@ -69,6 +69,17 @@ class CropDiag(BaseModel):
     viz_engines: list[str]
     quality_alerts: list[str]
     stage: str  # première étape en cause, « aucune » si tout est passé
+    # Géométrie (aucune donnée personnelle) : taille du recadrage et de la page, part de la page
+    # couverte par le quadrilatère détecté, rotation, nombre de recadrages sur la même page.
+    crop_px: tuple[int, int] = (0, 0)
+    page_px: tuple[int, int] = (0, 0)
+    quad_area_pct: float | None = None
+    rotation: int = 0
+    detection: str | None = None
+    crops_on_page: int = 1
+    mrz_band_source: str | None = None
+    # Champs suspects : « surname:label val@(x%,y%) lab@(x%,y%) » (positions dans le recadrage).
+    geometry: list[str] = Field(default_factory=list)
 
 
 class DocumentDiag(BaseModel):
@@ -218,12 +229,60 @@ def _read_json(path: Path) -> dict[str, Any] | None:
     return data if isinstance(data, dict) else None
 
 
+def _polygon_area(points: list[list[float]]) -> float:
+    n = len(points)
+    return (
+        abs(
+            sum(
+                points[i][0] * points[(i + 1) % n][1] - points[(i + 1) % n][0] * points[i][1]
+                for i in range(n)
+            )
+        )
+        / 2
+    )
+
+
+def _center_pct(quad: list[list[float]], width: int, height: int) -> str:
+    xs = [p[0] for p in quad]
+    ys = [p[1] for p in quad]
+    cx, cy = (min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2
+    return f"({round(100 * cx / max(width, 1))}%,{round(100 * cy / max(height, 1))}%)"
+
+
+def _suspect_geometry(art: Path, width: int, height: int, doc_code: str | None) -> list[str]:
+    """Pour chaque champ suspect de l'extraction (H) : méthode et positions relatives du cadre de
+    la valeur et du cadre du libellé. Aucun texte."""
+    extract = _read_json(art / "extract.json") or {}
+    viz = _read_json(art / "viz.json") or {}
+    slots = {s["id"]: s for s in viz.get("slots") or []}
+    label_slots: dict[str, list[int]] = extract.get("label_slots") or {}
+    out: list[str] = []
+    for name, f in (extract.get("fields") or {}).items():
+        flags = value_flags(name, f.get("value"), doc_code)
+        if not flags:
+            continue
+        value_ids = f.get("slot_ids") or []
+        vpos = ",".join(
+            _center_pct(slots[i]["quad"]["points"], width, height) for i in value_ids if i in slots
+        )
+        lpos = ",".join(
+            _center_pct(slots[i]["quad"]["points"], width, height)
+            for i in label_slots.get(name, [])
+            if i in slots
+        )
+        out.append(
+            f"{name}:{f.get('method')} {','.join(flags)} valeur@{vpos or '?'} libellé@{lpos or '-'}"
+        )
+    return out
+
+
 def _crop_diag(
     crop: m.Crop,
     page: m.Page,
     file: m.File,
     art: Path,
     field_flags: dict[str, list[str]],
+    crops_on_page: int = 1,
 ) -> CropDiag:
     mrz = _read_json(art / "mrz.json")
     viz = _read_json(art / "viz.json") or {}
@@ -232,6 +291,9 @@ def _crop_diag(
     checks: dict[str, bool] = result.get("checks") or {}
     slots = viz.get("slots") or []
     doc_type = classify.get("doc_type")
+    timings = _read_json(art / "timings.json") or {}
+    quad_pts = crop.quad_json if isinstance(crop.quad_json, list) else []
+    page_area = max(page.width * page.height, 1)
     return CropDiag(
         crop_id=crop.id,
         file_no=file.upload_order,
@@ -260,6 +322,14 @@ def _crop_diag(
             side=crop.side,
             field_flags=field_flags,
         ),
+        crop_px=(crop.width, crop.height),
+        page_px=(page.width, page.height),
+        quad_area_pct=round(100 * _polygon_area(quad_pts) / page_area, 1) if quad_pts else None,
+        rotation=crop.rotation,
+        detection=timings.get("detection"),
+        crops_on_page=crops_on_page,
+        mrz_band_source=((mrz or {}).get("band") or {}).get("source"),
+        geometry=_suspect_geometry(art, crop.width, crop.height, classify.get("doc_code")),
     )
 
 
@@ -283,6 +353,7 @@ def diagnose_batch(db: Session, settings: Settings, batch_id: str) -> BatchDiagn
         else []
     )
     crop_by_id = {c.id: c for c in crops}
+    per_page: Counter[str] = Counter(c.page_id for c in crops)
     crops_per_file: Counter[str] = Counter()
     files_with_crops: set[str] = set()
     for c in crops:
@@ -328,7 +399,14 @@ def diagnose_batch(db: Session, settings: Settings, batch_id: str) -> BatchDiagn
                 continue
             p = page_by_id[crop.page_id]
             cdiags.append(
-                _crop_diag(crop, p, file_by_id[p.file_id], art_root / cid, flags_by_field)
+                _crop_diag(
+                    crop,
+                    p,
+                    file_by_id[p.file_id],
+                    art_root / cid,
+                    flags_by_field,
+                    crops_on_page=per_page[p.id],
+                )
             )
         faces = (
             "both"
@@ -360,6 +438,8 @@ def diagnose_batch(db: Session, settings: Settings, batch_id: str) -> BatchDiagn
                 fields=fdiag,
             )
         )
+    used: Counter[str] = Counter(c.crop_id for d in diags for c in d.crops)
+    crops_by_doc_count = Counter(used.values())  # n documents → combien de recadrages
     jobs = db.scalars(select(m.Job).where(m.Job.batch_id == batch_id)).all()
     job_counts: Counter[tuple[str, str, str | None]] = Counter()
     job_attempts: Counter[tuple[str, str, str | None]] = Counter()
@@ -391,7 +471,7 @@ def diagnose_batch(db: Session, settings: Settings, batch_id: str) -> BatchDiagn
         crops_per_file=dict(sorted(crops_per_file.items(), key=lambda kv: int(kv[0]))),
         documents=diags,
         jobs=job_diags,
-        summary=summarize(diags, job_counts),
+        summary=summarize(diags, job_counts, per_page, crops_by_doc_count),
     )
 
 
@@ -399,14 +479,18 @@ def diagnose_batch(db: Session, settings: Settings, batch_id: str) -> BatchDiagn
 
 
 def summarize(
-    docs: list[DocumentDiag], job_counts: Counter[tuple[str, str, str | None]]
+    docs: list[DocumentDiag],
+    job_counts: Counter[tuple[str, str, str | None]],
+    per_page: Counter[str] | None = None,
+    crop_doc_counts: Counter[int] | None = None,
 ) -> dict[str, dict[str, int]]:
     out: dict[str, Counter[str]] = {
         k: Counter()
         for k in (
             "doc_type", "issuing_state", "mrz_format", "physical_format", "pairing", "faces",
             "document_status", "stage", "mrz_found", "mrz_valid", "mrz_failure",
-            "failed_check", "reason", "quality_alert", "job",
+            "failed_check", "reason", "quality_alert", "job", "crops_per_page",
+            "documents_per_crop", "detection", "mrz_band_source",
         )
     }  # fmt: skip
     for d in docs:
@@ -434,6 +518,14 @@ def summarize(
             out.setdefault(f"status:{name}", Counter())[f.status] += 1
             for flag in f.flags:
                 out.setdefault("field_flag", Counter())[f"{name}:{flag}"] += 1
+    for page_crops in (per_page or Counter()).values():
+        out["crops_per_page"][str(page_crops)] += 1
+    for n_docs, n_crops in (crop_doc_counts or Counter()).items():
+        out["documents_per_crop"][str(n_docs)] += n_crops
+    for d in docs:
+        for c in d.crops:
+            out["detection"][c.detection or "?"] += 1
+            out["mrz_band_source"][c.mrz_band_source or "-"] += 1
     for (t, s, e), n in job_counts.items():
         out["job"][f"{t}/{s}" + (f"/{e}" if e else "")] += n
     return {k: dict(sorted(v.items(), key=lambda kv: (-kv[1], kv[0]))) for k, v in out.items()}
@@ -492,7 +584,8 @@ def render_text(diag: BatchDiagnosis) -> str:
             w("     motifs : " + ", ".join(f"{k} x{n}" if n > 1 else k for k, n in counted))
         for c in d.crops:
             w(
-                f"     recadrage fichier#{c.file_no} p{c.page} {c.side} {c.physical_format}"
+                f"     recadrage {c.crop_id[:8]} fichier#{c.file_no} p{c.page}"
+                f" ({c.crops_on_page} sur la page) {c.side} {c.physical_format}"
                 f" type={c.doc_type or '?'}{'(probable)' if c.probable_type else ''}"
                 f" mrz={'oui' if c.mrz_found else 'non'}"
                 f" valide={ {True: 'oui', False: 'non', None: 'n/a'}[c.mrz_valid] }"
@@ -504,6 +597,14 @@ def render_text(diag: BatchDiagnosis) -> str:
                 + (f" qualité={','.join(c.quality_alerts)}" if c.quality_alerts else "")
                 + f" étape={c.stage}"
             )
+            w(
+                f"       géométrie : recadrage={c.crop_px[0]}x{c.crop_px[1]}"
+                f" page={c.page_px[0]}x{c.page_px[1]} quad={c.quad_area_pct}% de la page"
+                f" rotation={c.rotation} détection={c.detection or '?'}"
+                f" bande_mrz={c.mrz_band_source or '-'}"
+            )
+            for g in c.geometry:
+                w(f"       suspect {g}")
         w(
             "     "
             + " ".join(_fmt_field(n, f) for n, f in d.fields.items() if f.status != "missing")

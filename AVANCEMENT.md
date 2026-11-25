@@ -148,3 +148,18 @@ Hypothèses à confirmer par le diagnostic (vérifiées seulement sur des chaîn
 - « Nom ép. DUPONT » n'est pas un libellé combiné : à traiter avec le nom d'usage.
 
 Reste (après ton retour du diagnostic) : 2. gabarits `reference/templates/` (France d'abord), 3. images de contrôle à valider par toi, 4. corrections (lecture MRZ, appariement automatique, MRZ prioritaire sur la zone imprimée), 5. autres pays.
+
+### Corrections après le premier diagnostic (2026-11-25)
+
+Causes classées par nombre de documents touchés (lot réel, 22 documents) :
+
+| # | Cause | Documents | État |
+|---|---|---|---|
+| 1 | MRZ non localisée (morphologie seule) : tous les passeports | 18 / 22 | **corrigé** (repli par les lignes OCR) : à vérifier sur ton lot |
+| 2 | Zone visuelle pauvre sans MRZ : dates, sexe, expiration vides (19-20 / 22), pays inconnu (6) | 19-20 / 22 | conséquence de 1 ; gabarits (étape suivante) pour les passeports sans MRZ lisible |
+| 3 | Nom = `P` (code du document) | 8 / 22 | **corrigé** (libellés Type/Code, valeur invraisemblable) ; position réelle de `P` à lire avec le nouveau `diagnose` |
+| 4 | Prénoms en casse mixte (10), marques `ép.`/`usage` (5), numéro de libellé `(2)` / chiffres (3), nationalité avec libellés (2) | 10 / 5 / 3 / 2 | **corrigé** (majuscules, usage_name, filtres) |
+| 5 | Recto/verso de la CNI : trois documents pour deux recadrages (p5, p6), suggestion 0,3 restée alors qu'une paire à 0,8 existe | 3 docs | **non résolu** : hypothèse = deux recadrages par page (carte détectée deux fois) ; le nouveau `diagnose` donne le nombre de recadrages par page et de documents par recadrage |
+| 6 | Format physique `unknown` (17 recadrages) et reflets (18) | 17 / 18 | pas de correction sans géométrie ; le nouveau `diagnose` donne taille du recadrage, part de la page et mode de détection |
+
+Banc documents (Mac, trois moteurs) avant → après : champs obligatoires tous justes 40,0 → 41,7 % · noms avec accents 51,6 → 52,7 % · sans accents 75,0 % · cartes appariées 81,2 % · 0 erreur auto-validée · 0 fausse paire. Aucune régression. Le banc synthétique MRZ n'est pas concerné (le repli n'y est pas activé).

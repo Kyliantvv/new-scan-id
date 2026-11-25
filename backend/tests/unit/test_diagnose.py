@@ -164,3 +164,32 @@ def test_summary_counts_are_aggregates() -> None:
 
     out = summarize([], Counter({("process_file", "done", None): 2}))
     assert out["job"] == {"process_file/done": 2}
+
+
+def test_suspect_geometry_has_positions_but_no_text(tmp_path) -> None:
+    import json
+
+    from idreader.diagnose import _suspect_geometry
+
+    def quad(x: float, y: float, w: float = 200, h: float = 40) -> dict:
+        return {"points": [[x, y], [x + w, y], [x + w, y + h], [x, y + h]]}
+
+    viz = {
+        "slots": [
+            {"id": 1, "quad": quad(100, 100), "readings": []},  # libellé
+            {"id": 2, "quad": quad(100, 400), "readings": []},  # valeur lue
+        ]
+    }
+    extract = {
+        "fields": {
+            "surname": {"value": "P", "method": "label", "slot_ids": [2]},
+            "given_names": {"value": "ANNA, MARIA", "method": "label", "slot_ids": [2]},
+        },
+        "label_slots": {"surname": [1]},
+    }
+    (tmp_path / "viz.json").write_text(json.dumps(viz), encoding="utf-8")
+    (tmp_path / "extract.json").write_text(json.dumps(extract), encoding="utf-8")
+    out = _suspect_geometry(tmp_path, 1000, 1000, "P<")
+    assert len(out) == 1  # seul le champ suspect (« P ») est décrit
+    assert out[0].startswith("surname:label SHORT,DOC_CODE valeur@(20%,42%) libellé@(20%,12%)")
+    assert "ANNA" not in out[0] and "MARIA" not in out[0]
