@@ -1,0 +1,67 @@
+# Passeport biométrique français (page de données). Zones : % du recadrage normalisé
+# (x, y, largeur, hauteur ; origine en haut à gauche), relevées sur le spécimen PRADO.
+id: FRA_passport_2009
+country: FRA
+type: passport
+version: "2009"
+description: Passeport biométrique français (depuis 2009), page de données, libellés numérotés bilingues.
+recognition:
+  physical_format: ID3
+  aspect: [1.38, 1.50]
+  mrz_format: TD3
+  photo_side: left
+  notes: >-
+    Photo à gauche, photo fantôme au centre, mot « SPÉCIMEN » en diagonale sur le spécimen ;
+    ligne « Type / Code du pays / Passeport n° » en haut à droite de la photo.
+date_format: "DD MM YYYY"   # séparateurs variables (« 05 03-2019 » vu sur le spécimen)
+rules:
+  numbered_labels: true       # « Nom (1) », « Prénoms (2) » : le numéro n'est jamais une valeur
+  given_names_separator: ","
+  usage_name_markers: ["ép.", "épouse", "epse", "usage", "vve", "veuve"]
+  mrz_priority: true
+  notes:
+    - "« Type » (P), « Code du pays » (FRA) et « Passeport n° » ne sont pas des noms."
+    - "Nom d'usage : « DUPONT ép. MARTIN » sur la ligne du nom ; jamais dans les prénoms."
+faces:
+  front:
+    specimen: France/passport-fr.jpg
+    mrz_format: TD3
+    mrz_zone: [4.5, 80.0, 89.0, 13.0]
+    photo_zone: [4.5, 21.0, 28.0, 51.0]
+    fixed_labels:
+      - "RÉPUBLIQUE FRANÇAISE"
+      - "PASSEPORT / PASSPORT"
+      - "Type / Type"
+      - "Code du pays / Country code"
+      - "Passeport n° / Passport no"
+      - "Nom / Surname (1)"
+      - "Prénoms / Given names (2)"
+      - "Nationalité / Nationality (3)"
+      - "Date de naissance / Date of birth (4)"
+      - "Sexe / Sex (5)"
+      - "Lieu de naissance / Place of birth (6)"
+      - "Date de délivrance / Date of issue (7)"
+      - "Date d'expiration / Date of expiry (8)"
+      - "Autorité / Authority (9)"
+      - "Domicile / Residence (11)"
+      - "Taille / Height (12)"
+      - "Couleur des yeux / Colour of eyes (13)"
+    fields:
+      doc_type:        {label: "Type / Type", label_zone: [32.0, 7.2, 8.0, 2.6], zone: [32.0, 10.4, 6.0, 4.0]}
+      country_code:    {label: "Code du pays / Country code", label_zone: [44.7, 7.2, 15.0, 2.6], zone: [44.7, 10.4, 12.0, 4.0]}
+      document_number: {label: "Passeport n° / Passport no", label_zone: [70.0, 7.2, 15.0, 2.6], zone: [70.0, 10.4, 14.0, 4.0]}
+      surname:         {label: "Nom / Surname (1)", label_zone: [32.0, 15.3, 16.0, 2.6], zone: [32.0, 18.8, 40.0, 4.0]}
+      given_names:     {label: "Prénoms / Given names (2)", label_zone: [32.0, 23.3, 18.0, 2.6], zone: [32.0, 26.8, 40.0, 4.0]}
+      nationality:     {label: "Nationalité / Nationality (3)", label_zone: [32.0, 31.1, 20.0, 2.6], zone: [32.0, 35.0, 18.0, 4.0]}
+      sex:             {label: "Sexe / Sex (5)", label_zone: [52.8, 31.1, 7.0, 2.6], zone: [52.8, 35.4, 5.0, 3.5]}
+      height:          {label: "Taille / Height (12)", label_zone: [60.0, 31.1, 9.0, 2.6], zone: [60.0, 35.0, 9.0, 4.0]}
+      eye_colour:      {label: "Couleur des yeux / Colour of eyes (13)", label_zone: [70.0, 31.1, 20.0, 2.6], zone: [70.0, 35.0, 12.0, 4.0]}
+      date_of_birth:   {label: "Date de naissance / Date of birth (4)", label_zone: [32.0, 39.4, 20.0, 2.6], zone: [32.0, 42.8, 18.0, 3.5]}
+      place_of_birth:  {label: "Lieu de naissance / Place of birth (6)", label_zone: [53.0, 39.4, 22.0, 2.6], zone: [53.0, 42.8, 25.0, 3.5]}
+      date_of_issue:   {label: "Date de délivrance / Date of issue (7)", label_zone: [32.0, 47.5, 20.0, 2.6], zone: [32.0, 51.3, 18.0, 3.5]}
+      address:         {label: "Domicile / Residence (11)", label_zone: [64.0, 47.2, 16.0, 2.6], zone: [64.0, 51.8, 28.0, 8.0], multiline: true}
+      authority:       {label: "Autorité / Authority (9)", label_zone: [32.0, 55.5, 14.0, 2.6], zone: [32.0, 59.3, 30.0, 3.8]}
+      date_of_expiry:  {label: "Date d'expiration / Date of expiry (8)", label_zone: [32.0, 63.6, 22.0, 2.6], zone: [32.0, 67.1, 18.0, 3.5]}
+    other_zones:
+      ghost_photo: [39.0, 17.0, 21.0, 35.0]
+      rf_hexagon: [84.0, 5.0, 11.0, 20.0]

@@ -338,3 +338,37 @@ def diagnose(
     finally:
         engine.dispose()
     typer.echo(diag.model_dump_json(indent=1) if as_json else render_text(diag), nl=as_json)
+
+
+@app.command("template-control")
+def template_control(
+    template_id: Annotated[str, typer.Option("--id", help="Gabarit (défaut : tous)")] = "",
+) -> None:
+    """Images de contrôle des gabarits : spécimen + cadre et nom de chaque zone.
+
+    Écrit `<IDR_SPECIMENS_DIR>/controle/<gabarit>_<face>.png` (jamais commité).
+    """
+    import cv2
+
+    from idreader.pipeline.templates import load_templates, normalize_specimen, render_control
+
+    settings = get_settings()
+    out_dir = settings.specimens_dir / "controle"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    templates = load_templates()
+    if template_id:
+        if template_id not in templates:
+            typer.echo(f"Gabarit inconnu : {template_id}", err=True)
+            raise typer.Exit(1)
+        templates = {template_id: templates[template_id]}
+    for tid, t in templates.items():
+        for side, face in t.faces.items():
+            path = settings.specimens_dir / face.specimen
+            if not path.is_file():
+                typer.echo(f"{tid} {side} : spécimen absent ({face.specimen})", err=True)
+                continue
+            image = normalize_specimen(path, t.recognition.physical_format)
+            control = render_control(image, face, f"{tid} / {side}")
+            target = out_dir / f"{tid}_{side}.png"
+            cv2.imwrite(str(target), cv2.cvtColor(control, cv2.COLOR_RGB2BGR))
+            typer.echo(str(target))

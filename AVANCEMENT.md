@@ -176,3 +176,9 @@ Lecture du nouveau `diagnose` (23 documents) : MRZ trouvée sur 9 documents sur 
 | MRZ non localisée (14) | Non reproductible sur le spécimen PRADO (4 variantes : pleine page, marges, rotation 2°, petit : MRZ lue à chaque fois). | Tolérance élargie (lignes tronquées, fusionnées, seule, chevrons lus en lettres) + **sonde OCR** dans `diagnose`. |
 
 Banc documents avant → après ce lot de corrections : champs obligatoires tous justes 41,7 → 41,7 % ; cartes appariées 81,2 % ; 0 erreur auto-validée ; 0 fausse paire. Aucune régression.
+
+### Gabarits français (2026-11-25)
+
+Trois gabarits validés sur image de contrôle : passeport biométrique (`FRA_passport_2009`), CNI 2021 recto et verso (`FRA_id_card_2021`), ancienne CNI recto et verso (`FRA_id_card_1995`). Tests : schéma, cohérence (formats de MRZ, zones qui ne se chevauchent pas, zones invalides refusées) et, avec les spécimens PRADO (`IDR_SPECIMENS_DIR`), le texte attendu dans chaque zone (passeport : nom, prénoms, dates, lieu, autorité, adresse, numéro, MRZ de 2 lignes ; CNI 2021 : nom, n° du document, expiration, MRZ TD1 ; ancienne CNI : MRZ, validité, adresse).
+
+**Pas encore branchés sur le pipeline** (étape suivante, avec mesure du banc). Manquent : ancien passeport (avant 2009) et des CNI en haute résolution (≥ 1000 px de large) pour mesurer la lecture, pas seulement la position des zones.

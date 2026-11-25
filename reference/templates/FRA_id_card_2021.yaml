@@ -1,0 +1,73 @@
+# Carte nationale d'identité française au format carte (depuis août 2021), recto et verso.
+id: FRA_id_card_2021
+country: FRA
+type: id_card
+version: "2021"
+description: CNI française au format carte bancaire (depuis 2021), recto avec photo, verso avec MRZ TD1.
+recognition:
+  physical_format: ID1
+  aspect: [1.55, 1.62]
+  mrz_format: TD1
+  photo_side: left
+  notes: >-
+    Recto : photo à gauche, « RÉPUBLIQUE FRANÇAISE / CARTE NATIONALE D'IDENTITÉ / IDENTITY CARD »,
+    drapeau européen en haut à droite. Verso : 2D-Doc, puce, MRZ TD1 de trois lignes.
+date_format: "DD MM YYYY"
+rules:
+  numbered_labels: false
+  given_names_separator: ","
+  usage_name_markers: ["ép.", "épouse", "epse", "usage", "vve", "veuve"]
+  mrz_priority: true
+  notes:
+    - "Prénoms en casse mixte et séparés par des virgules (« Maëlys-Gaëlle, Marie »)."
+    - "Le « N° du document » du recto est celui de la MRZ ; le petit numéro en bas à droite n'est pas un champ."
+faces:
+  front:
+    specimen: France/cni-fr-2021-recto.jpg
+    mrz_format: null
+    photo_zone: [7.5, 24.0, 28.5, 67.5]
+    fixed_labels:
+      - "RÉPUBLIQUE FRANÇAISE"
+      - "CARTE NATIONALE D'IDENTITÉ / IDENTITY CARD"
+      - "Nom / Surname"
+      - "Prénom(s) / Given name(s)"
+      - "Sexe / Sex"
+      - "Nationalité / Nationality"
+      - "Date de naissance / Date of birth"
+      - "Lieu de naissance / Place of birth"
+      - "Nom d'usage / Name used"
+      - "N° du document / Document No"
+      - "Date d'expiration / Expiry date"
+    fields:
+      surname:         {label: "Nom / Surname", label_zone: [40.5, 21.0, 20.0, 3.0], zone: [40.5, 23.3, 40.0, 5.5]}
+      given_names:     {label: "Prénom(s) / Given name(s)", label_zone: [40.5, 34.3, 25.0, 3.0], zone: [40.5, 37.2, 45.0, 4.5]}
+      sex:             {label: "Sexe / Sex", label_zone: [40.5, 47.4, 9.0, 2.6], zone: [40.5, 50.3, 8.0, 4.2]}
+      nationality:     {label: "Nationalité / Nationality", label_zone: [49.5, 47.4, 20.0, 2.6], zone: [49.5, 50.3, 14.0, 4.2]}
+      date_of_birth:   {label: "Date de naissance / Date of birth", label_zone: [72.0, 47.4, 23.0, 2.6], zone: [72.0, 50.3, 19.0, 4.2]}
+      place_of_birth:  {label: "Lieu de naissance / Place of birth", label_zone: [40.5, 55.1, 26.0, 2.6], zone: [40.5, 57.6, 35.0, 4.6]}
+      usage_name:      {label: "Nom d'usage / Name used", label_zone: [40.5, 63.4, 24.0, 2.6], zone: [40.5, 65.9, 40.0, 4.8]}
+      document_number: {label: "N° du document / Document No", label_zone: [40.5, 71.5, 28.0, 2.6], zone: [40.5, 74.6, 30.0, 5.0]}
+      date_of_expiry:  {label: "Date d'expiration / Expiry date", label_zone: [72.0, 71.5, 23.0, 2.6], zone: [72.0, 74.2, 19.0, 4.8]}
+      card_number:     {zone: [72.0, 84.2, 19.0, 6.0]}
+    other_zones:
+      signature: [43.5, 82.0, 19.0, 11.0]
+      emblem: [7.5, 7.5, 12.0, 13.0]
+      eu_flag: [80.0, 7.5, 12.5, 12.5]
+  back:
+    specimen: France/cni-fr-2021-verso.jpg
+    mrz_format: TD1
+    mrz_zone: [4.5, 68.0, 91.5, 23.0]
+    fixed_labels:
+      - "Taille / Height"
+      - "Date de délivrance / Date of issue"
+      - "Adresse / Address"
+    fields:
+      height:        {label: "Taille / Height", label_zone: [26.5, 6.3, 11.0, 2.8], zone: [26.5, 9.4, 11.0, 4.8]}
+      date_of_issue: {label: "Date de délivrance / Date of issue", label_zone: [41.0, 6.3, 25.0, 2.8], zone: [41.0, 9.4, 18.0, 4.8]}
+      address:       {label: "Adresse / Address", label_zone: [26.5, 15.4, 12.0, 2.8], zone: [26.5, 18.8, 36.0, 14.5], multiline: true}
+    other_zones:
+      qr_2ddoc: [11.0, 7.5, 14.0, 21.0]
+      chip: [10.5, 31.0, 15.0, 22.0]
+      vertical_number: [5.0, 21.0, 4.0, 35.0]
+      ghost_photo: [79.0, 10.0, 13.5, 21.0]
+      tactile_mark: [41.0, 41.5, 10.0, 9.5]
