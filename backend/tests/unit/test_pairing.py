@@ -82,6 +82,63 @@ def test_two_mrz_sides_are_never_paired() -> None:
     assert auto == [] and suggested == []
 
 
+# --- PDF de plusieurs pages : 2 cartes par page, recto page 5, verso page 6 ---------------
+
+
+def _other_mrz() -> MrzResult:
+    """Un second verso, d'une autre personne (identité synthétique)."""
+    import random
+
+    from idreader.bench.synthetic import random_identity
+    from idreader.pipeline.mrz.formats import MrzFormat
+    from idreader.pipeline.mrz.synth import build
+
+    lines = build(MrzFormat.TD1, random_identity(random.Random(11), MrzFormat.TD1))  # noqa: S311
+    voted = vote([BandReading(engine="ppocr", lines=lines)])
+    assert voted is not None
+    result = decode(voted, today=TODAY)
+    assert result is not None
+    return result
+
+
+def page_side(
+    key: str, page: int, rank: int, *, mrz: bool, texts: tuple[str, ...] = (), other: bool = False
+) -> Side:
+    found = (_other_mrz() if other else _mrz()) if mrz else None
+    return Side(key, 1, f"p{page}", "ID1", found, texts, page, rank)
+
+
+def test_consecutive_pages_same_slot_components() -> None:
+    back = page_side("back", 6, 0, mrz=True)
+    front = page_side("front", 5, 0, mrz=False)
+    p = score(back, front)
+    assert p.hints == ("consecutive_pages", "same_slot")
+    assert p.score == pytest.approx(0.5)
+    other_slot = score(back, page_side("f2", 5, 1, mrz=False))
+    assert other_slot.hints == ("consecutive_pages",) and other_slot.score == pytest.approx(0.3)
+    assert score(back, page_side("far", 8, 0, mrz=False)).score == 0  # pages non consécutives
+
+
+def test_two_cards_per_page_are_paired_by_slot_and_name() -> None:
+    """Lot réel : page 5 = 2 recto, page 6 = 2 verso. Le nom du verso retrouvé sur le recto
+    donne 0,8 (auto) ; l'autre carte reste en suggestion."""
+    a_back = page_side("a_back", 6, 0, mrz=True)
+    b_back = page_side("b_back", 6, 1, mrz=True, other=True)
+    a_front = page_side("a_front", 5, 0, mrz=False, texts=FRONT_TEXTS)  # porte le nom de a_back
+    b_front = page_side("b_front", 5, 1, mrz=False, texts=("AUTRE", "AUTRE PRENOM"))
+    auto, suggested = pair_sides([a_back, b_back, a_front, b_front])
+    assert [(p.mrz_key, p.other_key) for p in auto] == [("a_back", "a_front")]
+    assert [(p.mrz_key, p.other_key) for p in suggested] == [("b_back", "b_front")]
+    assert suggested[0].score == pytest.approx(0.5)  # même emplacement, pages consécutives
+
+
+def test_slot_alone_never_auto_pairs() -> None:
+    auto, suggested = pair_sides(
+        [page_side("back", 6, 0, mrz=True), page_side("front", 5, 0, mrz=False)]
+    )
+    assert auto == [] and [p.other_key for p in suggested] == ["front"]
+
+
 # --- Doublons -----------------------------------------------------------------------------
 
 
@@ -201,3 +258,36 @@ def test_card_front_and_back_files_are_paired(migrated, monkeypatch, tmp_path) -
         assert {bool(d.front_crop_id) for d in restored} == {True, False}
     engine.dispose()
     get_settings.cache_clear()
+
+
+def test_crop_rank_follows_reading_order(migrated) -> None:
+    from idreader.core.db import make_engine, make_session_factory
+    from idreader.worker.pair import _crop_rank
+
+    engine = make_engine(migrated)
+    with make_session_factory(engine)() as db:
+        batch = m.Batch(name="Lot")
+        db.add(batch)
+        db.flush()
+        f = m.File(
+            batch_id=batch.id, original_name="x.pdf", mime="application/pdf", sha256="0" * 64,
+            size_bytes=1, storage_path="", upload_order=1,
+        )  # fmt: skip
+        db.add(f)
+        db.flush()
+        page = m.Page(file_id=f.id, page_index=4, storage_path="", width=2338, height=1653)
+        db.add(page)
+        db.flush()
+
+        def crop(x: float, y: float) -> m.Crop:
+            quad = [[x, y], [x + 800, y], [x + 800, y + 500], [x, y + 500]]
+            c = m.Crop(page_id=page.id, quad_json=quad, storage_path="", width=1712, height=1080)
+            db.add(c)
+            db.flush()
+            return c
+
+        bottom, top = crop(100, 900), crop(100, 100)  # créé dans le désordre
+        assert (_crop_rank(db, top), _crop_rank(db, bottom)) == (0, 1)
+        left, right = crop(100, 100), crop(1200, 110)  # même rangée : gauche puis droite
+        assert _crop_rank(db, left) < _crop_rank(db, right)
+    engine.dispose()

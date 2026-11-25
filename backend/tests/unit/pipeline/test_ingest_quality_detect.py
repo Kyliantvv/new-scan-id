@@ -133,6 +133,29 @@ def test_mrz_glare() -> None:
     assert quality.mrz_glare(band)
 
 
+def test_white_scan_background_is_not_glare() -> None:
+    """Scan à fond blanc pur (255) : ni marges, ni fond de la bande MRZ ne sont des reflets."""
+    page = np.full((1653, 2338, 3), 255, np.uint8)
+    cv2.rectangle(page, (300, 200), (900, 700), (40, 40, 40), -1)  # photo
+    for i in range(12):
+        cv2.putText(page, "SURNAME GIVEN NAMES", (1000, 260 + 40 * i), cv2.FONT_HERSHEY_SIMPLEX,
+                    1.0, (10, 10, 10), 2)  # fmt: skip
+    q = quality.measure(page)
+    assert "QUALITY_GLARE" not in q.alerts and q.glare_ratio < 0.001
+
+    band = np.full((120, 1400, 3), 255, np.uint8)
+    for i in range(2):
+        cv2.putText(band, "P<FRADURANDAL<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<", (20, 40 + 45 * i),
+                    cv2.FONT_HERSHEY_SIMPLEX, 1.1, (0, 0, 0), 3)  # fmt: skip
+    assert not quality.mrz_glare(band)
+
+
+def test_glare_spot_on_a_white_scan_is_still_glare_when_it_has_no_ink() -> None:
+    card_rgb = np.full((800, 1200, 3), 215, np.uint8)
+    cv2.circle(card_rgb, (600, 400), 150, (255, 255, 255), -1)
+    assert quality.measure(card_rgb).glare_largest_blob > 0.005
+
+
 # --- C ----------------------------------------------------------------------------------
 
 

@@ -163,3 +163,16 @@ Causes classées par nombre de documents touchés (lot réel, 22 documents) :
 | 6 | Format physique `unknown` (17 recadrages) et reflets (18) | 17 / 18 | pas de correction sans géométrie ; le nouveau `diagnose` donne taille du recadrage, part de la page et mode de détection |
 
 Banc documents (Mac, trois moteurs) avant → après : champs obligatoires tous justes 40,0 → 41,7 % · noms avec accents 51,6 → 52,7 % · sans accents 75,0 % · cartes appariées 81,2 % · 0 erreur auto-validée · 0 fausse paire. Aucune régression. Le banc synthétique MRZ n'est pas concerné (le repli n'y est pas activé).
+
+### Deuxième diagnostic du lot réel (2026-11-25)
+
+Lecture du nouveau `diagnose` (23 documents) : MRZ trouvée sur 9 documents sur 23 (contre 3 avant), dont 6 par le repli OCR ; 14 restent `MRZ_NOT_FOUND`.
+
+| Cause | Constat | Correction |
+|---|---|---|
+| 5 : CNI « détectée deux fois » | **Infirmée.** `documents_per_crop = 1` pour les 23 recadrages : aucun recadrage n'est partagé. Les pages 5 et 6 portent chacune **deux cartes** (2 recto, 2 verso, 7,2 % de la page chacune). L'appariement n'avait pas encore tourné (job à +85 s) ; auparavant il ne formait qu'une paire sur deux : aucun indice de proximité entre deux pages d'un même PDF. | Pages consécutives du même fichier + même rang sur la page (voir DECISIONS) ; tests : 2 cartes par page. |
+| 6a : format physique `unknown` (11) | Les passeports sont détectés comme **la page entière** (`détection=page`, 100 %, 2338 × 1653) ; sans MRZ, le format ne peut pas être déduit. Conséquence directe de la MRZ non trouvée, pas un défaut de détection. | Aucune ; disparaît avec la MRZ. |
+| 6b : reflets (18) | **Faux positifs** : les scans à fond blanc pur comptaient leur fond comme reflet. Sur le spécimen en page A4, ratio 42-74 % avant, 0 % après. | Définition du reflet (voir DECISIONS) ; tests. |
+| MRZ non localisée (14) | Non reproductible sur le spécimen PRADO (4 variantes : pleine page, marges, rotation 2°, petit : MRZ lue à chaque fois). | Tolérance élargie (lignes tronquées, fusionnées, seule, chevrons lus en lettres) + **sonde OCR** dans `diagnose`. |
+
+Banc documents avant → après ce lot de corrections : champs obligatoires tous justes 41,7 → 41,7 % ; cartes appariées 81,2 % ; 0 erreur auto-validée ; 0 fausse paire. Aucune régression.

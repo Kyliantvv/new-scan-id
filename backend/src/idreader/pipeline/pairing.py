@@ -7,6 +7,8 @@ format physique :
 |-------------------------------------------------------------|--------|
 | même page, deux recadrages côte à côte                      | + 0,6  |
 | fichiers consécutifs dans l'ordre d'upload du même lot      | + 0,3  |
+| pages consécutives du même fichier (PDF de plusieurs pages) | + 0,3  |
+| … et même emplacement sur la page (1re carte, 2e carte…)    | + 0,2  |
 | n° de document de la MRZ retrouvé dans l'OCR de l'autre face | + 0,5  |
 | nom ou date de naissance de la MRZ retrouvé sur l'autre face | + 0,3  |
 
@@ -31,6 +33,7 @@ COMPETITOR_GAP = 0.2
 SUGGEST_MIN = 0.3
 SAME_PAGE = 0.6
 CONSECUTIVE = 0.3
+SAME_SLOT = 0.2  # pages consécutives, même rang du recadrage sur sa page
 NUMBER_FOUND = 0.5
 NAME_OR_DOB_FOUND = 0.3
 # Les cadres du verso sont décalés dans la zone visuelle fusionnée : aucune relation
@@ -51,6 +54,8 @@ class Side:
     physical_format: str
     mrz: MrzResult | None
     texts: tuple[str, ...] = ()
+    page_index: int = 0  # rang de la page dans son fichier
+    crop_rank: int = 0  # rang du recadrage sur sa page (ordre de lecture)
 
     @property
     def mrz_side(self) -> bool:
@@ -80,6 +85,13 @@ def score(a: Side, b: Side) -> Pair:
     elif abs(a.file_order - b.file_order) == 1:
         total += CONSECUTIVE
         hints.append("consecutive_files")
+    elif a.file_order == b.file_order and abs(a.page_index - b.page_index) == 1:
+        # Un PDF de plusieurs pages : recto sur une page, verso sur la suivante.
+        total += CONSECUTIVE
+        hints.append("consecutive_pages")
+        if a.crop_rank == b.crop_rank:
+            total += SAME_SLOT
+            hints.append("same_slot")
     number = a.mrz.fields.get("document_number")
     joined = _norm(" ".join(b.texts))
     if number and number.value and len(number.value) >= 5 and _norm(number.value) in joined:

@@ -15,6 +15,7 @@ from idreader.pipeline.mrz.locate import (
     locate_band_from_lines,
     looks_like_mrz_line,
     normalize_mrz_text,
+    probe_lines,
 )
 from idreader.pipeline.mrz.stage import run_mrz
 from tests.unit.pipeline.test_mrz_stage import TD3, ScriptedEngine
@@ -87,12 +88,52 @@ def test_locates_three_line_card() -> None:
     assert band is not None and band.height >= 3 * 30
 
 
-def test_single_line_or_misaligned_lines_are_not_a_band() -> None:
-    assert locate_band_from_lines([line(TD3[0], 80, 1000, 1000)], 1200, 1200) is None
-    far = [line(TD3[0], 80, 400, 1000), line(TD3[1], 80, 1000, 1000)]  # trop éloignées
-    assert locate_band_from_lines(far, 1200, 1200) is None
+def test_single_line_at_top_is_not_a_band() -> None:
+    assert locate_band_from_lines([line(TD3[0], 80, 100, 1000)], 1200, 1200) is None
+
+
+def test_single_full_line_at_bottom_gives_a_grown_band() -> None:
+    """Une seule ligne lue (reflet sur l'autre) : la bande est élargie pour retrouver l'autre."""
+    band = locate_band_from_lines([line(TD3[1], 80, 1000, 1000)], 1200, 1200)
+    assert band is not None and band.source == "ocr_lines"
+    assert band.y < 1000 - 30 and band.y + band.height > 1030 + 30
+
+
+def test_misaligned_lines_are_not_stacked_but_lowest_line_is_used() -> None:
     shifted = [line(TD3[0], 80, 1000, 1000), line(TD3[1], 500, 1045, 600)]
-    assert locate_band_from_lines(shifted, 1200, 1200) is None
+    band = locate_band_from_lines(shifted, 1200, 1200)
+    assert band is not None and band.height < 200  # une ligne élargie, pas une pile
+
+
+def test_truncated_line_next_to_a_full_line_is_stacked() -> None:
+    truncated = TD3[1][-24:]  # 24 caractères avec chevrons : ligne coupée par un reflet
+    lines = [line(TD3[0], 80, 1000, 1000), line(truncated, 80, 1045, 520)]
+    band = locate_band_from_lines(lines, 1200, 1200)
+    assert band is not None and band.y <= 1000 and band.y + band.height >= 1075
+
+
+def test_merged_block_of_two_lines_is_one_band() -> None:
+    merged = TD3[0] + TD3[1]  # l'OCR rend les deux lignes d'un seul tenant
+    band = locate_band_from_lines([line(merged, 80, 1000, 1000, h=80)], 1200, 1200)
+    assert band is not None and band.height >= 80
+
+
+def test_filler_lookalikes_count_as_chevrons() -> None:
+    assert looks_like_mrz_line("PKFRADURANDALKKKKJEANKKKKKKKKKKKKKKKKKKKKKK")
+    assert not looks_like_mrz_line("REPUBLIQUE FRANCAISE PASSEPORT PASSPORT")
+
+
+def test_probe_counts_lines_without_text() -> None:
+    lines = [
+        line(TD3[0], 80, 1000, 1000),
+        line(TD3[1][:20], 80, 1045, 400),
+        line("Nom / Surname", 100, 300, 200),
+    ]
+    probe = probe_lines(lines, 1200, 1200)
+    assert probe["lines"] == 3
+    assert str(probe["mrz_like"]).count("[") == 2  # une liste de listes à un élément
+    assert str(probe["near"]).count("[") == 2
+    assert "ERIKSSON" not in str(probe)
 
 
 def test_lowest_stack_wins() -> None:

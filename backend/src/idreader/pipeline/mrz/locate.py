@@ -211,14 +211,19 @@ def deskew(band: RGBImage) -> RGBImage:
 
 # --- Repli par les lignes OCR -----------------------------------------------------------------
 
-MRZ_LINE_LENGTHS = (30, 36, 44)  # TD1, TD2 / MRV-B, TD3 / MRV-A (ICAO 9303)
 MIN_MRZ_CHARS = 26  # une ligne MRZ lue avec quelques caractères en moins reste reconnue
-MRZ_ALPHABET = re.compile(r"^[A-Z0-9<]+$")
+PARTIAL_MIN_CHARS = 18  # ligne tronquée acceptée si une ligne alignée est complète
+BLOCK_MIN_CHARS = (
+    60  # une seule « ligne » de 60 caractères ou plus : bloc de 2 lignes MRZ fusionnées
+)
 _FILLER_LOOKALIKES = str.maketrans({"«": "<", "‹": "<", "〈": "<", "＜": "<"})
 _MRZ_START = ("P<", "I<", "V<", "A<", "C<", "ID", "IP", "PP")
+# Suites de remplissage lues comme des lettres par l'OCR (« KKKK », « CCCC », « LLLL »).
+_FILLER_RUN = re.compile(r"([KCLXE])\1{3,}")
 STACK_GAP = 2.5  # écart maximal entre deux lignes MRZ, en hauteurs de ligne
 SAME_EDGE = 0.08  # bords gauches alignés à 8 % de la largeur près
-SAME_LENGTH = 0.15  # longueurs alignées à 15 % près
+SAME_LENGTH = 0.25  # longueurs alignées à 25 % près (une ligne peut être lue tronquée)
+LOWER_THIRD = 0.55  # une ligne MRZ seule doit être dans le bas du document
 
 
 def normalize_mrz_text(text: str) -> str:
@@ -226,27 +231,60 @@ def normalize_mrz_text(text: str) -> str:
     return re.sub(r"\s+", "", text.upper().translate(_FILLER_LOOKALIKES))
 
 
-def looks_like_mrz_line(text: str) -> bool:
+def _alphabet_ratio(t: str) -> float:
+    if not t:
+        return 0.0
+    return sum(1 for c in t if c in "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789<") / len(t)
+
+
+def looks_like_mrz_line(text: str, *, min_chars: int = MIN_MRZ_CHARS) -> bool:
     """Ligne de MRZ plausible : longue, presque entièrement dans l'alphabet MRZ, avec des
-    chevrons ou un début de code de document (ICAO 9303 partie 3)."""
+    chevrons (ou une suite de remplissage lue comme lettres) ou un début de code de document
+    (ICAO 9303 partie 3)."""
     t = normalize_mrz_text(text)
-    if len(t) < MIN_MRZ_CHARS:
+    if len(t) < min_chars or _alphabet_ratio(t) < 0.9:
         return False
-    in_alphabet = sum(1 for c in t if c in "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789<")
-    if in_alphabet / len(t) < 0.9:
-        return False
-    return t.count("<") >= 2 or t.startswith(_MRZ_START)
+    return t.count("<") >= 2 or t.startswith(_MRZ_START) or bool(_FILLER_RUN.search(t))
 
 
-def locate_band_from_lines(lines: Sequence[TextLine], width: int, height: int) -> Band | None:
-    """Bande MRZ d'après les lignes OCR : la pile de 2 ou 3 lignes MRZ la plus basse."""
-    cands = []
+def probe_lines(lines: Sequence[TextLine], width: int, height: int) -> dict[str, object]:
+    """Ce que l'OCR a vu pour chercher une MRZ (diagnostic, aucun texte) : nombre de lignes,
+    lignes plausibles / presque plausibles, positions verticales (%) et longueurs."""
+    like, near = [], []
     for line in lines:
+        t = normalize_mrz_text(line.text)
+        _x, y, w, h = line.quad.bbox
         if looks_like_mrz_line(line.text):
+            like.append(
+                (round(100 * (y + h / 2) / max(height, 1)), len(t), round(100 * w / max(width, 1)))
+            )
+        elif len(t) >= PARTIAL_MIN_CHARS and _alphabet_ratio(t) >= 0.8:
+            near.append(
+                (round(100 * (y + h / 2) / max(height, 1)), len(t), round(100 * w / max(width, 1)))
+            )
+    return {
+        "lines": len(lines),
+        "mrz_like": [list(c) for c in like[:6]],  # (y %, caractères, largeur %)
+        "near": [list(c) for c in near[:6]],
+    }
+
+
+def _boxes(lines: Sequence[TextLine], *, min_chars: int) -> list[tuple[float, float, float, float]]:
+    out = []
+    for line in lines:
+        if looks_like_mrz_line(line.text, min_chars=min_chars):
             x, y, w, h = line.quad.bbox
             if h > 0 and w / max(h, 1) >= 6:  # une ligne MRZ est très allongée
-                cands.append((x, y, w, h))
-    cands.sort(key=lambda b: b[1])
+                out.append((x, y, w, h))
+    return out
+
+
+def _stack(
+    cands: list[tuple[float, float, float, float]], width: int, *, lenient: bool = False
+) -> list[list[tuple[float, float, float, float]]]:
+    """Piles de lignes alignées. `lenient` : une ligne lue tronquée (reflet) peut avoir une autre
+    largeur ; il suffit que ses bords gauches ou droits soient alignés avec la ligne voisine."""
+    cands = sorted(cands, key=lambda b: b[1])
     stacks: list[list[tuple[float, float, float, float]]] = []
     for c in cands:
         for stack in stacks:
@@ -254,20 +292,55 @@ def locate_band_from_lines(lines: Sequence[TextLine], width: int, height: int) -
             gap = c[1] - (last[1] + last[3])
             aligned = abs(c[0] - last[0]) <= SAME_EDGE * width
             similar = abs(c[2] - last[2]) <= SAME_LENGTH * max(c[2], last[2])
+            if lenient:
+                right = abs((c[0] + c[2]) - (last[0] + last[2])) <= SAME_EDGE * width
+                aligned, similar = aligned or right, True
             if aligned and similar and -0.5 * last[3] <= gap <= STACK_GAP * max(c[3], last[3]):
                 stack.append(c)
                 break
         else:
             stacks.append([c])
-    stacks = [s for s in stacks if 2 <= len(s) <= 3]
-    if not stacks:
-        return None
-    best = max(stacks, key=lambda s: s[0][1])  # la plus basse
-    x0 = min(b[0] for b in best)
-    y0 = min(b[1] for b in best)
-    x1 = max(b[0] + b[2] for b in best)
-    y1 = max(b[1] + b[3] for b in best)
-    mx, my = MARGIN_X * width, MARGIN_Y * (y1 - y0)
+    return stacks
+
+
+def _band(
+    boxes: list[tuple[float, float, float, float]], width: int, height: int, *, grow: float = 0.0
+) -> Band:
+    x0 = min(b[0] for b in boxes)
+    y0 = min(b[1] for b in boxes)
+    x1 = max(b[0] + b[2] for b in boxes)
+    y1 = max(b[1] + b[3] for b in boxes)
+    line_h = max(b[3] for b in boxes)
+    mx, my = MARGIN_X * width, MARGIN_Y * (y1 - y0) + grow * line_h
     bx0, by0 = max(0, round(x0 - mx)), max(0, round(y0 - my))
     bx1, by1 = min(width, round(x1 + mx)), min(height, round(y1 + my))
     return Band(x=bx0, y=by0, width=bx1 - bx0, height=by1 - by0, source="ocr_lines")
+
+
+def locate_band_from_lines(lines: Sequence[TextLine], width: int, height: int) -> Band | None:
+    """Bande MRZ d'après les lignes OCR, de la plus sûre à la plus tolérante :
+    1. pile de 2 ou 3 lignes MRZ complètes, la plus basse ;
+    2. pile dont une ligne est lue tronquée (≥ 18 caractères) à côté d'une ligne complète ;
+    3. une « ligne » très longue (≥ 60 caractères) : deux lignes MRZ fusionnées par l'OCR ;
+    4. une seule ligne MRZ complète dans le bas du document : la bande est élargie d'une
+       hauteur de ligne de chaque côté pour que la lecture retrouve l'autre ligne."""
+    full = _boxes(lines, min_chars=MIN_MRZ_CHARS)
+    stacks = [s for s in _stack(full, width) if 2 <= len(s) <= 3]
+    if stacks:
+        return _band(max(stacks, key=lambda s: s[0][1]), width, height)
+    partial = _boxes(lines, min_chars=PARTIAL_MIN_CHARS)
+    if len(partial) > len(full):
+        stacks = [s for s in _stack(partial, width, lenient=True) if 2 <= len(s) <= 3]
+        stacks = [s for s in stacks if any(b in full for b in s)]
+        if stacks:
+            return _band(max(stacks, key=lambda s: s[0][1]), width, height)
+    for line in sorted(lines, key=lambda ln: -ln.quad.bbox[1]):
+        t = normalize_mrz_text(line.text)
+        if len(t) >= BLOCK_MIN_CHARS and _alphabet_ratio(t) >= 0.9:
+            x, y, w, h = line.quad.bbox
+            if (y + h / 2) / max(height, 1) >= LOWER_FROM:
+                return _band([(x, y, w, h)], width, height)
+    singles = [b for b in full if (b[1] + b[3] / 2) / max(height, 1) >= LOWER_THIRD]
+    if singles:
+        return _band([max(singles, key=lambda b: b[1])], width, height, grow=1.3)
+    return None

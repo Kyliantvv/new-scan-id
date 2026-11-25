@@ -80,6 +80,8 @@ class CropDiag(BaseModel):
     mrz_band_source: str | None = None
     # Champs suspects : « surname:label val@(x%,y%) lab@(x%,y%) » (positions dans le recadrage).
     geometry: list[str] = Field(default_factory=list)
+    # Sonde du repli OCR pour la MRZ, par moteur : lignes vues, lignes plausibles, presque.
+    mrz_probe: dict[str, str] = Field(default_factory=dict)
 
 
 class DocumentDiag(BaseModel):
@@ -249,6 +251,16 @@ def _center_pct(quad: list[list[float]], width: int, height: int) -> str:
     return f"({round(100 * cx / max(width, 1))}%,{round(100 * cy / max(height, 1))}%)"
 
 
+def _probe_summary(probe: dict[str, Any]) -> dict[str, str]:
+    """« lignes=61 mrz=2[(y%,car.,larg.%)…] proches=0 » par moteur : positions et longueurs."""
+    out: dict[str, str] = {}
+    for engine, p in probe.items():
+        like = [tuple(c) for c in p.get("mrz_like", [])]
+        near = [tuple(c) for c in p.get("near", [])]
+        out[engine] = f"lignes={p.get('lines')} mrz={len(like)}{like} proches={len(near)}{near}"
+    return out
+
+
 def _suspect_geometry(art: Path, width: int, height: int, doc_code: str | None) -> list[str]:
     """Pour chaque champ suspect de l'extraction (H) : méthode et positions relatives du cadre de
     la valeur et du cadre du libellé. Aucun texte."""
@@ -329,6 +341,7 @@ def _crop_diag(
         detection=timings.get("detection"),
         crops_on_page=crops_on_page,
         mrz_band_source=((mrz or {}).get("band") or {}).get("source"),
+        mrz_probe=_probe_summary((mrz or {}).get("probe") or {}),
         geometry=_suspect_geometry(art, crop.width, crop.height, classify.get("doc_code")),
     )
 
@@ -603,6 +616,8 @@ def render_text(diag: BatchDiagnosis) -> str:
                 f" rotation={c.rotation} détection={c.detection or '?'}"
                 f" bande_mrz={c.mrz_band_source or '-'}"
             )
+            for engine, text in c.mrz_probe.items():
+                w(f"       sonde_ocr {engine} {text}")
             for g in c.geometry:
                 w(f"       suspect {g}")
         w(

@@ -10,6 +10,7 @@ import logging
 from datetime import date, timedelta
 
 from sqlalchemy import func, select
+from sqlalchemy.orm import Session
 
 from idreader.core import models as m
 from idreader.core.db import make_session_factory
@@ -22,6 +23,27 @@ log = logging.getLogger(__name__)
 
 PAIR_DELAY = timedelta(minutes=2)
 PAIRABLE_STATUSES = (m.DocumentStatus.TO_REVIEW, m.DocumentStatus.AUTO_VALIDATED)
+
+
+def _crop_rank(db: Session, crop: m.Crop) -> int:
+    """Rang du recadrage sur sa page, en ordre de lecture (haut vers bas, puis gauche à droite) :
+    la 1re carte de la page 5 est le recto de la 1re carte de la page 6."""
+    siblings = db.scalars(select(m.Crop).where(m.Crop.page_id == crop.page_id)).all()
+    if len(siblings) < 2:
+        return 0
+
+    def centre(c: m.Crop) -> tuple[float, float]:
+        pts = c.quad_json or [[0, 0]]
+        return (
+            sum(p[0] for p in pts) / len(pts),
+            sum(p[1] for p in pts) / len(pts),
+        )
+
+    height = max(c.height for c in siblings)
+    ordered = sorted(
+        siblings, key=lambda c: (round(centre(c)[1] / max(height * 0.6, 1)), centre(c)[0])
+    )
+    return [c.id for c in ordered].index(crop.id)
 
 
 def pair_batch(ctx: JobContext) -> None:
@@ -76,6 +98,8 @@ def pair_batch(ctx: JobContext) -> None:
                     physical_format=crop.physical_format,
                     mrz=ev.mrz.result,
                     texts=tuple(s.text for s in ev.viz.slots),
+                    page_index=page.page_index,
+                    crop_rank=_crop_rank(db, crop),
                 )
             )
             by_key[d.id] = d

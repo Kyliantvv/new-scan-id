@@ -17,6 +17,7 @@ from idreader.pipeline.mrz.locate import (
     deskew,
     locate_band,
     locate_band_from_lines,
+    probe_lines,
 )
 from idreader.pipeline.mrz.read import read_band
 from idreader.pipeline.mrz.vote import vote
@@ -33,6 +34,8 @@ class MrzStage(BaseModel):
     engine_errors: list[str] = Field(default_factory=list)
     result: MrzResult | None
     failure: str | None = None  # NO_ENGINE | MRZ_NOT_FOUND | MRZ_UNREADABLE
+    # Sonde du repli par les lignes OCR, par moteur (diagnostic, aucun texte).
+    probe: dict[str, dict[str, object]] = Field(default_factory=dict)
     ms: dict[str, float] = Field(default_factory=dict)
 
 
@@ -65,7 +68,10 @@ def _bands_differ(a: Band, b: Band) -> bool:
 
 
 def _locate_by_ocr(
-    crop: RGBImage, line_engines: Sequence[OcrEngine], ms: dict[str, float]
+    crop: RGBImage,
+    line_engines: Sequence[OcrEngine],
+    ms: dict[str, float],
+    probe: dict[str, dict[str, object]],
 ) -> tuple[Band | None, list[str]]:
     """Repli E.1 : lignes MRZ retrouvées par un moteur de détection de texte (Vision, PP-OCR)."""
     t0 = time.perf_counter()
@@ -77,6 +83,7 @@ def _locate_by_ocr(
         except Exception as exc:  # un moteur défaillant ne bloque pas les autres
             errors.append(f"{engine.name}:{getattr(exc, 'code', type(exc).__name__)}")
             continue
+        probe[engine.name] = probe_lines(lines, w, h)
         band = locate_band_from_lines(lines, w, h)
         if band is not None:
             ms["locate_ocr"] = (time.perf_counter() - t0) * 1000
@@ -105,10 +112,11 @@ def run_mrz(
     readings = 0
     errors: list[str] = []
     result: MrzResult | None = None
+    probe: dict[str, dict[str, object]] = {}
     if band is not None:
         readings, errors, result = _read_and_decode(crop, band, engines, today, plan, ms)
     if result is None and line_engines:
-        alt, loc_errors = _locate_by_ocr(crop, line_engines, ms)
+        alt, loc_errors = _locate_by_ocr(crop, line_engines, ms, probe)
         errors += loc_errors
         if alt is not None and (band is None or _bands_differ(band, alt)):
             n, errs, alt_result = _read_and_decode(crop, alt, engines, today, plan, ms, "_ocr")
@@ -118,7 +126,7 @@ def run_mrz(
     if band is None:
         return MrzStage(
             engines=names, band=None, readings=0, result=None, failure="MRZ_NOT_FOUND",
-            engine_errors=errors, ms=ms,
+            engine_errors=errors, ms=ms, probe=probe,
         )  # fmt: skip
     return MrzStage(
         engines=names,
@@ -128,4 +136,5 @@ def run_mrz(
         result=result,
         failure=None if result is not None else "MRZ_UNREADABLE",
         ms=ms,
+        probe=probe,
     )

@@ -32,3 +32,6 @@ Thumbs.db
 
 # Front : cache de tsc -b
 *.tsbuildinfo
+
+# Spécimens PRADO et images de contrôle : redistribution non garantie par leurs conditions d'utilisation
+docs-entrainement/
