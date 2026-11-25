@@ -49,6 +49,7 @@ class DocResult:
     silent_errors: list[str]  # champs faux dans un recadrage validé automatiquement
     fields_correct: dict[str, bool] = field(default_factory=dict)
     accented: dict[str, bool] = field(default_factory=dict)  # noms avec diacritiques
+    names_plain: dict[str, bool] = field(default_factory=dict)  # noms justes, accents ignorés
     reasons: list[str] = field(default_factory=list)
     ms: float = 0.0
 
@@ -60,6 +61,14 @@ def _merged(crops: list[CropAnalysis]) -> dict[str, str | None]:
             if f.value and (name not in best or f.confidence > best[name][0]):
                 best[name] = (f.confidence, f.value)
     return {k: v for k, (_, v) in best.items()}
+
+
+def _plain(text: str | None) -> str:
+    """Majuscules sans diacritiques, espaces simples (04_EVALUATION.md : compte sans accents)."""
+    import unicodedata
+
+    base = unicodedata.normalize("NFKD", text or "")
+    return " ".join("".join(c for c in base if not unicodedata.combining(c)).upper().split())
 
 
 def run_doc_case(
@@ -81,6 +90,11 @@ def run_doc_case(
         for k in ("surname", "given_names")
         if truth.get(k) and not str(truth[k]).isascii()
     }
+    names_plain = {
+        k: _plain(merged.get(k)) == _plain(truth.get(k))
+        for k in ("surname", "given_names")
+        if truth.get(k)
+    }
     silent: list[str] = []
     for ca in crops:
         if ca.result.status is not DocState.AUTO_VALIDATED:
@@ -100,6 +114,7 @@ def run_doc_case(
         silent_errors=silent,
         fields_correct=correct,
         accented=accented,
+        names_plain=names_plain,
         reasons=sorted({r.code for ca in crops for r in ca.result.reasons}),
         ms=ms,
     )
@@ -116,6 +131,10 @@ def summarize_docs(results: list[DocResult]) -> dict[str, Any]:
         "detection_ok_pct": _pct(sum(r.crops_found == r.crops_expected for r in results), n),
         "mandatory_all_correct_pct": _pct(len(mandatory), n),
         "accented_names_correct_pct": _pct(sum(accented), len(accented)),
+        "names_correct_no_accents_pct": _pct(
+            sum(v for r in results for v in r.names_plain.values()),
+            sum(len(r.names_plain) for r in results),
+        ),
         "automation_pct": _pct(len(auto), n),
         "auto_precision_pct": _pct(sum(not r.silent_errors for r in auto), len(auto)),
         "silent_errors": [r.case_id for r in results if r.silent_errors],
@@ -231,7 +250,8 @@ def markdown_docs(p: dict[str, Any], baseline: dict[str, Any] | None = None) -> 
     rows = [
         ("Documents détectés au bon nombre (%)", "detection_ok_pct"),
         ("**Champs obligatoires tous justes (%)**", "mandatory_all_correct_pct"),
-        ("Noms accentués justes (%)", "accented_names_correct_pct"),
+        ("Noms accentués justes, accents compris (%)", "accented_names_correct_pct"),
+        ("Noms justes sans tenir compte des accents (%)", "names_correct_no_accents_pct"),
         ("Automatisation (%)", "automation_pct"),
         ("**Précision de l'auto-validation (%)**", "auto_precision_pct"),
         ("Temps p50 par document (ms)", "p50_ms"),

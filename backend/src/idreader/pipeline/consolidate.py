@@ -56,6 +56,7 @@ REASON_LABELS: dict[str, str] = {
     "FIELD_MISSING": "Champ obligatoire absent",
     "FIELD_LOW_CONFIDENCE": "Confiance insuffisante",
     "FIELD_UNVERIFIED": "Valeur lue par un seul moteur, sans preuve",
+    "VIZ_ACCENTS_UNCONFIRMED": "Accents du nom lus par un seul moteur : à confirmer",
     "VIZ_MRZ_NAME_CONFLICT": "Nom différent entre la MRZ et la zone visuelle",
     "VIZ_MRZ_DOB_CONFLICT": "Date de naissance différente entre la MRZ et la zone visuelle",
     "VIZ_MRZ_EXPIRY_CONFLICT": "Date d'expiration différente entre la MRZ et la zone visuelle",
@@ -199,6 +200,12 @@ def _from_mrz(f: MrzField, v: VizField | None, name: str) -> FieldResult:
                 ]
             if name == "date_of_birth" and v.year4 is not None:
                 value = v.value
+            if name in ("surname", "given_names") and not v.agreed:
+                # La MRZ prouve les lettres, pas les accents (Ï et I s'y écrivent I) : un seul
+                # moteur peut avoir perdu ou inventé un accent (03 § H.1, deux moteurs).
+                status = FieldState.UNCERTAIN
+                confidence = min(confidence, CONFIDENCE["viz_two_engines"])
+                reasons = [*reasons, "VIZ_ACCENTS_UNCONFIRMED"]
         elif name == "document_number" and v.value != f.value:
             candidates = [v.value, *[c for c in candidates if c != v.value]]
         elif v.value and v.value != f.value:

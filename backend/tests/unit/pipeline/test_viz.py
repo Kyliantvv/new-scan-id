@@ -209,9 +209,15 @@ def test_classify_from_text_is_probable() -> None:
 # --- L consolidation ----------------------------------------------------------------------
 
 
-def _consolidate(m: MrzResult | None, rows: tuple[tuple[str, float, float], ...], **kw: object):  # type: ignore[no-untyped-def]
-    ex = extract(viz(*rows), m, today=TODAY)
-    cls = classify_mrz(m) if m else classify_text([s.text for s in viz(*rows).slots])
+def _consolidate(  # type: ignore[no-untyped-def]
+    m: MrzResult | None,
+    rows: tuple[tuple[str, float, float], ...],
+    engines: tuple[str, ...] = ("ppocr", "vision"),
+    **kw: object,
+):
+    v = viz(*rows, engines=engines)
+    ex = extract(v, m, today=TODAY)
+    cls = classify_mrz(m) if m else classify_text([s.text for s in v.slots])
     return consolidate(
         mrz=m,
         extraction=ex,
@@ -230,6 +236,14 @@ def test_proven_document_is_auto_validated_when_specimens_allowed() -> None:
     assert r.fields["date_of_birth"].value == "1974-08-12"
 
 
+def test_accents_read_by_one_engine_are_not_proven() -> None:
+    r = _consolidate(mrz(TD3_VALID), PASSPORT, engines=("ppocr",), allow_specimen=True)
+    assert r.status is DocState.TO_REVIEW
+    assert r.fields["surname"].value == "ÉRIKSSON"
+    assert r.fields["surname"].status is FieldState.UNCERTAIN
+    assert ("VIZ_ACCENTS_UNCONFIRMED", "surname") in [(x.code, x.field) for x in r.reasons]
+
+
 def test_specimen_is_never_auto_validated_by_default() -> None:
     r = _consolidate(mrz(TD3_VALID), PASSPORT)
     assert r.status is DocState.TO_REVIEW
@@ -242,7 +256,7 @@ def test_single_mrz_engine_stays_to_review() -> None:
 
 
 def test_without_mrz_never_auto_validated() -> None:
-    r = _consolidate(None, PASSPORT, allow_specimen=True)
+    r = _consolidate(None, PASSPORT, engines=("ppocr",), allow_specimen=True)
     assert r.status is DocState.TO_REVIEW
     codes = [x.code for x in r.reasons]
     assert "NO_MRZ" in codes or "MRZ_NOT_FOUND" in codes
