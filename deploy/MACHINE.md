@@ -47,3 +47,19 @@ corepack enable                             # pnpm
 ## Procédure après coupure de courant (FileVault)
 
 À rédiger : qui saisit le mot de passe FileVault au démarrage, et comment le joindre.
+
+## Services (après `deploy/install.sh`)
+
+| Service | LaunchAgent | Journaux |
+|---|---|---|
+| API (127.0.0.1:8000) | `fr.idreader.api` | `~/Library/Logs/idreader/api.log`, `api.err.log` |
+| Worker (+ `idvision serve`) | `fr.idreader.worker` | `~/Library/Logs/idreader/worker.log`, `worker.err.log` |
+| Caddy (HTTPS, sous-réseau) | `fr.idreader.caddy` | `~/Library/Logs/idreader/caddy.log`, `caddy.err.log` |
+
+```bash
+launchctl print gui/$(id -u)/fr.idreader.worker | head -20      # état
+launchctl kickstart -k gui/$(id -u)/fr.idreader.worker          # redémarrer
+launchctl bootout gui/$(id -u)/fr.idreader.worker               # arrêter
+```
+
+Valeurs choisies à l'installation (à noter ici) : `IDR_HOST` = à relever · `IDR_LAN_CIDR` = à relever · `IDR_DATA_DIR` = à relever.

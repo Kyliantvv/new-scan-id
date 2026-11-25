@@ -1,0 +1,2739 @@
+{
+ "set": "documents",
+ "started_at": "2026-11-25T00:34:35+00:00",
+ "git": "910e0c9",
+ "seed": 2026,
+ "count": 60,
+ "reference_date": "2026-11-25",
+ "auto_validate_threshold": 0.95,
+ "environment": {
+  "platform": "Windows-11-10.0.26300-SP0",
+  "system": "Windows",
+  "macos": null,
+  "python": "3.12.10",
+  "idreader": "0.1.0",
+  "engines_active": [
+   "ppocr"
+  ],
+  "engines_missing": [
+   "vision",
+   "tesseract"
+  ],
+  "ppocr_model": "PP-OCRv6 small rec (MRZ) ; medium det + rec (zone visuelle), ONNX"
+ },
+ "warning": "**Résultats non représentatifs** : banc lancé sous Windows, pas sur le Mac mini et sans Apple Vision (moteur n° 1) et sans tesseract. Ce chiffre sert de référence pour suivre les évolutions du code ; **aucun poids ni seuil définitif ne doit être calibré dessus** (docs/04_EVALUATION.md, docs/07_ROADMAP.md § Phase 1a).",
+ "summary": {
+  "cases": 60,
+  "detection_ok_pct": 100.0,
+  "mandatory_all_correct_pct": 30.0,
+  "accented_names_correct_pct": 38.5,
+  "names_correct_no_accents_pct": 73.3,
+  "automation_pct": 0.0,
+  "auto_precision_pct": null,
+  "silent_errors": [],
+  "pairs_formed_pct": 84.4,
+  "false_pairs": 0,
+  "one_document_pct": 91.7,
+  "p50_ms": 3806.9,
+  "p95_ms": 4973.1
+ },
+ "groups": {
+  "kind=id_card": {
+   "cases": 32,
+   "detection_ok_pct": 100.0,
+   "mandatory_all_correct_pct": 28.1,
+   "accented_names_correct_pct": 33.3,
+   "names_correct_no_accents_pct": 81.2,
+   "automation_pct": 0.0,
+   "auto_precision_pct": null,
+   "silent_errors": [],
+   "pairs_formed_pct": 84.4,
+   "false_pairs": 0,
+   "one_document_pct": 84.4,
+   "p50_ms": 3859.7,
+   "p95_ms": 5162.7
+  },
+  "kind=passport": {
+   "cases": 28,
+   "detection_ok_pct": 100.0,
+   "mandatory_all_correct_pct": 32.1,
+   "accented_names_correct_pct": 44.2,
+   "names_correct_no_accents_pct": 64.3,
+   "automation_pct": 0.0,
+   "auto_precision_pct": null,
+   "silent_errors": [],
+   "pairs_formed_pct": null,
+   "false_pairs": 0,
+   "one_document_pct": 100.0,
+   "p50_ms": 2800.2,
+   "p95_ms": 4533.3
+  },
+  "quality=good": {
+   "cases": 20,
+   "detection_ok_pct": 100.0,
+   "mandatory_all_correct_pct": 55.0,
+   "accented_names_correct_pct": 68.8,
+   "names_correct_no_accents_pct": 95.0,
+   "automation_pct": 0.0,
+   "auto_precision_pct": null,
+   "silent_errors": [],
+   "pairs_formed_pct": 100.0,
+   "false_pairs": 0,
+   "one_document_pct": 100.0,
+   "p50_ms": 3826.9,
+   "p95_ms": 4199.2
+  },
+  "quality=medium": {
+   "cases": 20,
+   "detection_ok_pct": 100.0,
+   "mandatory_all_correct_pct": 35.0,
+   "accented_names_correct_pct": 44.8,
+   "names_correct_no_accents_pct": 87.5,
+   "automation_pct": 0.0,
+   "auto_precision_pct": null,
+   "silent_errors": [],
+   "pairs_formed_pct": 100.0,
+   "false_pairs": 0,
+   "one_document_pct": 100.0,
+   "p50_ms": 3359.7,
+   "p95_ms": 3956.4
+  },
+  "quality=poor": {
+   "cases": 20,
+   "detection_ok_pct": 100.0,
+   "mandatory_all_correct_pct": 0.0,
+   "accented_names_correct_pct": 0.0,
+   "names_correct_no_accents_pct": 37.5,
+   "automation_pct": 0.0,
+   "auto_precision_pct": null,
+   "silent_errors": [],
+   "pairs_formed_pct": 54.5,
+   "false_pairs": 0,
+   "one_document_pct": 75.0,
+   "p50_ms": 3920.1,
+   "p95_ms": 6448.9
+  },
+  "layout=a4": {
+   "cases": 7,
+   "detection_ok_pct": 100.0,
+   "mandatory_all_correct_pct": 0.0,
+   "accented_names_correct_pct": 0.0,
+   "names_correct_no_accents_pct": 71.4,
+   "automation_pct": 0.0,
+   "auto_precision_pct": null,
+   "silent_errors": [],
+   "pairs_formed_pct": 85.7,
+   "false_pairs": 0,
+   "one_document_pct": 85.7,
+   "p50_ms": 3286.9,
+   "p95_ms": 3921.8
+  },
+  "layout=separate": {
+   "cases": 53,
+   "detection_ok_pct": 100.0,
+   "mandatory_all_correct_pct": 34.0,
+   "accented_names_correct_pct": 43.2,
+   "names_correct_no_accents_pct": 73.6,
+   "automation_pct": 0.0,
+   "auto_precision_pct": null,
+   "silent_errors": [],
+   "pairs_formed_pct": 84.0,
+   "false_pairs": 0,
+   "one_document_pct": 92.5,
+   "p50_ms": 3811.3,
+   "p95_ms": 4973.1
+  }
+ },
+ "field_accuracy_pct": {
+  "surname": 40.0,
+  "given_names": 58.3,
+  "usage_name": 68.8,
+  "sex": 80.0,
+  "date_of_birth": 85.0,
+  "place_of_birth": 65.0,
+  "nationality": 80.0,
+  "document_number": 80.0,
+  "date_of_issue": 73.3,
+  "date_of_expiry": 86.7,
+  "authority": 71.7,
+  "personal_number": null,
+  "issuing_state": 85.0
+ },
+ "statuses": {
+  "to_review": 64,
+  "failed": 1
+ },
+ "reasons": {
+  "FIELD_UNVERIFIED": 52,
+  "VIZ_ACCENTS_UNCONFIRMED": 45,
+  "QUALITY_GLARE_MRZ": 4,
+  "FIELD_MISSING": 12,
+  "MRZ_NOT_FOUND": 12,
+  "PROBABLE_TYPE": 12,
+  "MRZ_COMPOSITE_FAILED": 3,
+  "MRZ_INVALID_SEX": 3,
+  "MRZ_REPAIR_AMBIGUOUS": 1,
+  "MRZ_UNKNOWN_COUNTRY": 3,
+  "VIZ_MRZ_DOB_CONFLICT": 3,
+  "VIZ_MRZ_EXPIRY_CONFLICT": 3,
+  "MRZ_BLIND_SPOT": 7,
+  "MRZ_UNREADABLE": 1,
+  "NO_MRZ": 1,
+  "TOO_BLURRY": 1
+ },
+ "cases_detail": [
+  {
+   "case_id": "doc-2026-00000",
+   "kind": "passport",
+   "quality": "good",
+   "layout": "separate",
+   "crops_expected": 1,
+   "crops_found": 1,
+   "statuses": [
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": true,
+    "given_names": true,
+    "sex": true,
+    "date_of_birth": true,
+    "place_of_birth": true,
+    "nationality": true,
+    "document_number": true,
+    "date_of_issue": true,
+    "date_of_expiry": true,
+    "authority": true,
+    "issuing_state": true
+   },
+   "accented": {
+    "surname": true
+   },
+   "names_plain": {
+    "surname": true,
+    "given_names": true
+   },
+   "reasons": [
+    "FIELD_UNVERIFIED",
+    "VIZ_ACCENTS_UNCONFIRMED"
+   ],
+   "ms": 3822.627800000191,
+   "paired": false,
+   "false_pairs": 0,
+   "documents": 1
+  },
+  {
+   "case_id": "doc-2026-00001",
+   "kind": "id_card",
+   "quality": "medium",
+   "layout": "separate",
+   "crops_expected": 2,
+   "crops_found": 2,
+   "statuses": [
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": true,
+    "given_names": true,
+    "sex": true,
+    "date_of_birth": true,
+    "place_of_birth": true,
+    "nationality": true,
+    "document_number": true,
+    "date_of_issue": true,
+    "date_of_expiry": true,
+    "authority": true,
+    "issuing_state": true
+   },
+   "accented": {
+    "surname": true,
+    "given_names": true
+   },
+   "names_plain": {
+    "surname": true,
+    "given_names": true
+   },
+   "reasons": [
+    "FIELD_UNVERIFIED",
+    "QUALITY_GLARE_MRZ",
+    "VIZ_ACCENTS_UNCONFIRMED"
+   ],
+   "ms": 3953.2475999985763,
+   "paired": true,
+   "false_pairs": 0,
+   "documents": 1
+  },
+  {
+   "case_id": "doc-2026-00002",
+   "kind": "id_card",
+   "quality": "poor",
+   "layout": "a4",
+   "crops_expected": 2,
+   "crops_found": 2,
+   "statuses": [
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": true,
+    "given_names": false,
+    "usage_name": true,
+    "sex": true,
+    "date_of_birth": true,
+    "place_of_birth": false,
+    "nationality": true,
+    "document_number": true,
+    "date_of_issue": false,
+    "date_of_expiry": true,
+    "authority": false,
+    "issuing_state": true
+   },
+   "accented": {},
+   "names_plain": {
+    "surname": true,
+    "given_names": false
+   },
+   "reasons": [
+    "FIELD_UNVERIFIED",
+    "VIZ_ACCENTS_UNCONFIRMED"
+   ],
+   "ms": 3286.935699998139,
+   "paired": true,
+   "false_pairs": 0,
+   "documents": 1
+  },
+  {
+   "case_id": "doc-2026-00003",
+   "kind": "passport",
+   "quality": "good",
+   "layout": "separate",
+   "crops_expected": 1,
+   "crops_found": 1,
+   "statuses": [
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": true,
+    "given_names": true,
+    "sex": true,
+    "date_of_birth": true,
+    "place_of_birth": true,
+    "nationality": true,
+    "document_number": true,
+    "date_of_issue": true,
+    "date_of_expiry": true,
+    "authority": true,
+    "issuing_state": true
+   },
+   "accented": {
+    "surname": true,
+    "given_names": true
+   },
+   "names_plain": {
+    "surname": true,
+    "given_names": true
+   },
+   "reasons": [
+    "FIELD_UNVERIFIED",
+    "VIZ_ACCENTS_UNCONFIRMED"
+   ],
+   "ms": 2963.422400000127,
+   "paired": false,
+   "false_pairs": 0,
+   "documents": 1
+  },
+  {
+   "case_id": "doc-2026-00004",
+   "kind": "passport",
+   "quality": "medium",
+   "layout": "separate",
+   "crops_expected": 1,
+   "crops_found": 1,
+   "statuses": [
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": false,
+    "given_names": true,
+    "sex": true,
+    "date_of_birth": true,
+    "place_of_birth": true,
+    "nationality": true,
+    "document_number": true,
+    "date_of_issue": true,
+    "date_of_expiry": true,
+    "authority": true,
+    "issuing_state": true
+   },
+   "accented": {
+    "surname": false,
+    "given_names": true
+   },
+   "names_plain": {
+    "surname": true,
+    "given_names": true
+   },
+   "reasons": [
+    "FIELD_UNVERIFIED",
+    "VIZ_ACCENTS_UNCONFIRMED"
+   ],
+   "ms": 2661.153799999738,
+   "paired": false,
+   "false_pairs": 0,
+   "documents": 1
+  },
+  {
+   "case_id": "doc-2026-00005",
+   "kind": "passport",
+   "quality": "poor",
+   "layout": "separate",
+   "crops_expected": 1,
+   "crops_found": 1,
+   "statuses": [
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": false,
+    "given_names": false,
+    "sex": false,
+    "date_of_birth": false,
+    "place_of_birth": false,
+    "nationality": false,
+    "document_number": false,
+    "date_of_issue": false,
+    "date_of_expiry": false,
+    "authority": false,
+    "issuing_state": false
+   },
+   "accented": {
+    "surname": false,
+    "given_names": false
+   },
+   "names_plain": {
+    "surname": false,
+    "given_names": false
+   },
+   "reasons": [
+    "FIELD_MISSING",
+    "MRZ_NOT_FOUND",
+    "PROBABLE_TYPE"
+   ],
+   "ms": 4061.7338999982167,
+   "paired": false,
+   "false_pairs": 0,
+   "documents": 1
+  },
+  {
+   "case_id": "doc-2026-00006",
+   "kind": "id_card",
+   "quality": "good",
+   "layout": "separate",
+   "crops_expected": 2,
+   "crops_found": 2,
+   "statuses": [
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": false,
+    "given_names": true,
+    "sex": true,
+    "date_of_birth": true,
+    "place_of_birth": true,
+    "nationality": true,
+    "document_number": true,
+    "date_of_issue": true,
+    "date_of_expiry": true,
+    "authority": true,
+    "issuing_state": true
+   },
+   "accented": {
+    "surname": false
+   },
+   "names_plain": {
+    "surname": true,
+    "given_names": true
+   },
+   "reasons": [
+    "FIELD_UNVERIFIED",
+    "VIZ_ACCENTS_UNCONFIRMED"
+   ],
+   "ms": 3862.5462999989395,
+   "paired": true,
+   "false_pairs": 0,
+   "documents": 1
+  },
+  {
+   "case_id": "doc-2026-00007",
+   "kind": "passport",
+   "quality": "medium",
+   "layout": "separate",
+   "crops_expected": 1,
+   "crops_found": 1,
+   "statuses": [
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": false,
+    "given_names": true,
+    "usage_name": true,
+    "sex": false,
+    "date_of_birth": true,
+    "place_of_birth": true,
+    "nationality": false,
+    "document_number": false,
+    "date_of_issue": true,
+    "date_of_expiry": true,
+    "authority": true,
+    "issuing_state": true
+   },
+   "accented": {
+    "surname": false
+   },
+   "names_plain": {
+    "surname": false,
+    "given_names": true
+   },
+   "reasons": [
+    "FIELD_UNVERIFIED",
+    "MRZ_COMPOSITE_FAILED",
+    "MRZ_INVALID_SEX",
+    "MRZ_REPAIR_AMBIGUOUS",
+    "MRZ_UNKNOWN_COUNTRY",
+    "VIZ_ACCENTS_UNCONFIRMED",
+    "VIZ_MRZ_DOB_CONFLICT",
+    "VIZ_MRZ_EXPIRY_CONFLICT"
+   ],
+   "ms": 2938.562600000296,
+   "paired": false,
+   "false_pairs": 0,
+   "documents": 1
+  },
+  {
+   "case_id": "doc-2026-00008",
+   "kind": "id_card",
+   "quality": "poor",
+   "layout": "separate",
+   "crops_expected": 2,
+   "crops_found": 2,
+   "statuses": [
+    "to_review",
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": true,
+    "given_names": false,
+    "usage_name": false,
+    "sex": true,
+    "date_of_birth": true,
+    "place_of_birth": false,
+    "nationality": true,
+    "document_number": true,
+    "date_of_issue": true,
+    "date_of_expiry": true,
+    "authority": true,
+    "issuing_state": true
+   },
+   "accented": {
+    "given_names": false
+   },
+   "names_plain": {
+    "surname": true,
+    "given_names": false
+   },
+   "reasons": [
+    "FIELD_MISSING",
+    "FIELD_UNVERIFIED",
+    "MRZ_BLIND_SPOT",
+    "MRZ_NOT_FOUND",
+    "PROBABLE_TYPE",
+    "QUALITY_GLARE_MRZ"
+   ],
+   "ms": 6448.936500000855,
+   "paired": false,
+   "false_pairs": 0,
+   "documents": 2
+  },
+  {
+   "case_id": "doc-2026-00009",
+   "kind": "id_card",
+   "quality": "good",
+   "layout": "separate",
+   "crops_expected": 2,
+   "crops_found": 2,
+   "statuses": [
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": true,
+    "given_names": true,
+    "sex": true,
+    "date_of_birth": true,
+    "place_of_birth": true,
+    "nationality": true,
+    "document_number": true,
+    "date_of_issue": true,
+    "date_of_expiry": true,
+    "authority": true,
+    "issuing_state": true
+   },
+   "accented": {
+    "surname": true,
+    "given_names": true
+   },
+   "names_plain": {
+    "surname": true,
+    "given_names": true
+   },
+   "reasons": [
+    "FIELD_UNVERIFIED",
+    "VIZ_ACCENTS_UNCONFIRMED"
+   ],
+   "ms": 3846.7730000011215,
+   "paired": true,
+   "false_pairs": 0,
+   "documents": 1
+  },
+  {
+   "case_id": "doc-2026-00010",
+   "kind": "id_card",
+   "quality": "medium",
+   "layout": "separate",
+   "crops_expected": 2,
+   "crops_found": 2,
+   "statuses": [
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": false,
+    "given_names": false,
+    "sex": true,
+    "date_of_birth": true,
+    "place_of_birth": true,
+    "nationality": true,
+    "document_number": true,
+    "date_of_issue": true,
+    "date_of_expiry": true,
+    "authority": true,
+    "issuing_state": true
+   },
+   "accented": {
+    "surname": false,
+    "given_names": false
+   },
+   "names_plain": {
+    "surname": false,
+    "given_names": false
+   },
+   "reasons": [
+    "FIELD_UNVERIFIED"
+   ],
+   "ms": 3811.034499998641,
+   "paired": true,
+   "false_pairs": 0,
+   "documents": 1
+  },
+  {
+   "case_id": "doc-2026-00011",
+   "kind": "id_card",
+   "quality": "poor",
+   "layout": "a4",
+   "crops_expected": 2,
+   "crops_found": 2,
+   "statuses": [
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": false,
+    "given_names": true,
+    "sex": true,
+    "date_of_birth": true,
+    "place_of_birth": false,
+    "nationality": true,
+    "document_number": true,
+    "date_of_issue": false,
+    "date_of_expiry": true,
+    "authority": false,
+    "issuing_state": true
+   },
+   "accented": {
+    "surname": false
+   },
+   "names_plain": {
+    "surname": false,
+    "given_names": true
+   },
+   "reasons": [
+    "FIELD_UNVERIFIED"
+   ],
+   "ms": 3284.9615999984962,
+   "paired": true,
+   "false_pairs": 0,
+   "documents": 1
+  },
+  {
+   "case_id": "doc-2026-00012",
+   "kind": "id_card",
+   "quality": "good",
+   "layout": "separate",
+   "crops_expected": 2,
+   "crops_found": 2,
+   "statuses": [
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": true,
+    "given_names": true,
+    "usage_name": false,
+    "sex": true,
+    "date_of_birth": true,
+    "place_of_birth": true,
+    "nationality": true,
+    "document_number": true,
+    "date_of_issue": true,
+    "date_of_expiry": true,
+    "authority": true,
+    "issuing_state": true
+   },
+   "accented": {
+    "surname": true
+   },
+   "names_plain": {
+    "surname": true,
+    "given_names": true
+   },
+   "reasons": [
+    "FIELD_UNVERIFIED",
+    "VIZ_ACCENTS_UNCONFIRMED"
+   ],
+   "ms": 3966.3266999996267,
+   "paired": true,
+   "false_pairs": 0,
+   "documents": 1
+  },
+  {
+   "case_id": "doc-2026-00013",
+   "kind": "passport",
+   "quality": "medium",
+   "layout": "separate",
+   "crops_expected": 1,
+   "crops_found": 1,
+   "statuses": [
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": false,
+    "given_names": false,
+    "usage_name": true,
+    "sex": true,
+    "date_of_birth": true,
+    "place_of_birth": true,
+    "nationality": true,
+    "document_number": true,
+    "date_of_issue": true,
+    "date_of_expiry": true,
+    "authority": true,
+    "issuing_state": true
+   },
+   "accented": {
+    "surname": false,
+    "given_names": false
+   },
+   "names_plain": {
+    "surname": false,
+    "given_names": true
+   },
+   "reasons": [
+    "FIELD_UNVERIFIED",
+    "VIZ_ACCENTS_UNCONFIRMED"
+   ],
+   "ms": 2764.539200001309,
+   "paired": false,
+   "false_pairs": 0,
+   "documents": 1
+  },
+  {
+   "case_id": "doc-2026-00014",
+   "kind": "id_card",
+   "quality": "poor",
+   "layout": "separate",
+   "crops_expected": 2,
+   "crops_found": 2,
+   "statuses": [
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": false,
+    "given_names": false,
+    "sex": true,
+    "date_of_birth": true,
+    "place_of_birth": false,
+    "nationality": true,
+    "document_number": true,
+    "date_of_issue": false,
+    "date_of_expiry": true,
+    "authority": false,
+    "issuing_state": true
+   },
+   "accented": {
+    "surname": false,
+    "given_names": false
+   },
+   "names_plain": {
+    "surname": true,
+    "given_names": true
+   },
+   "reasons": [
+    "FIELD_UNVERIFIED",
+    "VIZ_ACCENTS_UNCONFIRMED"
+   ],
+   "ms": 3856.855499998346,
+   "paired": true,
+   "false_pairs": 0,
+   "documents": 1
+  },
+  {
+   "case_id": "doc-2026-00015",
+   "kind": "id_card",
+   "quality": "good",
+   "layout": "separate",
+   "crops_expected": 2,
+   "crops_found": 2,
+   "statuses": [
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": false,
+    "given_names": true,
+    "usage_name": true,
+    "sex": true,
+    "date_of_birth": true,
+    "place_of_birth": true,
+    "nationality": true,
+    "document_number": true,
+    "date_of_issue": true,
+    "date_of_expiry": true,
+    "authority": true,
+    "issuing_state": true
+   },
+   "accented": {
+    "surname": false,
+    "given_names": true
+   },
+   "names_plain": {
+    "surname": true,
+    "given_names": true
+   },
+   "reasons": [
+    "FIELD_UNVERIFIED",
+    "VIZ_ACCENTS_UNCONFIRMED"
+   ],
+   "ms": 4135.851499999262,
+   "paired": true,
+   "false_pairs": 0,
+   "documents": 1
+  },
+  {
+   "case_id": "doc-2026-00016",
+   "kind": "id_card",
+   "quality": "medium",
+   "layout": "separate",
+   "crops_expected": 2,
+   "crops_found": 2,
+   "statuses": [
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": false,
+    "given_names": true,
+    "usage_name": true,
+    "sex": true,
+    "date_of_birth": true,
+    "place_of_birth": true,
+    "nationality": true,
+    "document_number": true,
+    "date_of_issue": true,
+    "date_of_expiry": true,
+    "authority": true,
+    "issuing_state": true
+   },
+   "accented": {
+    "surname": false,
+    "given_names": true
+   },
+   "names_plain": {
+    "surname": true,
+    "given_names": true
+   },
+   "reasons": [
+    "FIELD_UNVERIFIED",
+    "VIZ_ACCENTS_UNCONFIRMED"
+   ],
+   "ms": 3811.347200000455,
+   "paired": true,
+   "false_pairs": 0,
+   "documents": 1
+  },
+  {
+   "case_id": "doc-2026-00017",
+   "kind": "passport",
+   "quality": "poor",
+   "layout": "separate",
+   "crops_expected": 1,
+   "crops_found": 1,
+   "statuses": [
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": false,
+    "given_names": false,
+    "sex": false,
+    "date_of_birth": false,
+    "place_of_birth": false,
+    "nationality": false,
+    "document_number": false,
+    "date_of_issue": false,
+    "date_of_expiry": false,
+    "authority": false,
+    "issuing_state": false
+   },
+   "accented": {
+    "surname": false,
+    "given_names": false
+   },
+   "names_plain": {
+    "surname": false,
+    "given_names": false
+   },
+   "reasons": [
+    "FIELD_MISSING",
+    "MRZ_NOT_FOUND",
+    "PROBABLE_TYPE"
+   ],
+   "ms": 4533.278099999734,
+   "paired": false,
+   "false_pairs": 0,
+   "documents": 1
+  },
+  {
+   "case_id": "doc-2026-00018",
+   "kind": "id_card",
+   "quality": "good",
+   "layout": "a4",
+   "crops_expected": 2,
+   "crops_found": 2,
+   "statuses": [
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": false,
+    "given_names": false,
+    "usage_name": true,
+    "sex": true,
+    "date_of_birth": true,
+    "place_of_birth": true,
+    "nationality": true,
+    "document_number": true,
+    "date_of_issue": true,
+    "date_of_expiry": true,
+    "authority": true,
+    "issuing_state": true
+   },
+   "accented": {
+    "surname": false,
+    "given_names": false
+   },
+   "names_plain": {
+    "surname": false,
+    "given_names": true
+   },
+   "reasons": [
+    "FIELD_UNVERIFIED",
+    "VIZ_ACCENTS_UNCONFIRMED"
+   ],
+   "ms": 4199.201100000209,
+   "paired": true,
+   "false_pairs": 0,
+   "documents": 1
+  },
+  {
+   "case_id": "doc-2026-00019",
+   "kind": "id_card",
+   "quality": "medium",
+   "layout": "a4",
+   "crops_expected": 2,
+   "crops_found": 2,
+   "statuses": [
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": false,
+    "given_names": false,
+    "sex": true,
+    "date_of_birth": true,
+    "place_of_birth": false,
+    "nationality": true,
+    "document_number": true,
+    "date_of_issue": true,
+    "date_of_expiry": true,
+    "authority": true,
+    "issuing_state": true
+   },
+   "accented": {
+    "surname": false,
+    "given_names": false
+   },
+   "names_plain": {
+    "surname": true,
+    "given_names": true
+   },
+   "reasons": [
+    "FIELD_UNVERIFIED",
+    "VIZ_ACCENTS_UNCONFIRMED"
+   ],
+   "ms": 3921.821399999317,
+   "paired": true,
+   "false_pairs": 0,
+   "documents": 1
+  },
+  {
+   "case_id": "doc-2026-00020",
+   "kind": "passport",
+   "quality": "poor",
+   "layout": "separate",
+   "crops_expected": 1,
+   "crops_found": 1,
+   "statuses": [
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": false,
+    "given_names": false,
+    "sex": false,
+    "date_of_birth": false,
+    "place_of_birth": false,
+    "nationality": false,
+    "document_number": false,
+    "date_of_issue": false,
+    "date_of_expiry": false,
+    "authority": false,
+    "issuing_state": false
+   },
+   "accented": {
+    "surname": false,
+    "given_names": false
+   },
+   "names_plain": {
+    "surname": false,
+    "given_names": false
+   },
+   "reasons": [
+    "FIELD_MISSING",
+    "MRZ_NOT_FOUND",
+    "PROBABLE_TYPE"
+   ],
+   "ms": 4024.8932000031346,
+   "paired": false,
+   "false_pairs": 0,
+   "documents": 1
+  },
+  {
+   "case_id": "doc-2026-00021",
+   "kind": "id_card",
+   "quality": "good",
+   "layout": "separate",
+   "crops_expected": 2,
+   "crops_found": 2,
+   "statuses": [
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": true,
+    "given_names": true,
+    "sex": true,
+    "date_of_birth": true,
+    "place_of_birth": true,
+    "nationality": true,
+    "document_number": true,
+    "date_of_issue": true,
+    "date_of_expiry": true,
+    "authority": true,
+    "issuing_state": true
+   },
+   "accented": {
+    "surname": true,
+    "given_names": true
+   },
+   "names_plain": {
+    "surname": true,
+    "given_names": true
+   },
+   "reasons": [
+    "FIELD_UNVERIFIED",
+    "VIZ_ACCENTS_UNCONFIRMED"
+   ],
+   "ms": 5162.668400000257,
+   "paired": true,
+   "false_pairs": 0,
+   "documents": 1
+  },
+  {
+   "case_id": "doc-2026-00022",
+   "kind": "passport",
+   "quality": "medium",
+   "layout": "separate",
+   "crops_expected": 1,
+   "crops_found": 1,
+   "statuses": [
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": false,
+    "given_names": false,
+    "sex": true,
+    "date_of_birth": true,
+    "place_of_birth": false,
+    "nationality": true,
+    "document_number": true,
+    "date_of_issue": true,
+    "date_of_expiry": true,
+    "authority": true,
+    "issuing_state": true
+   },
+   "accented": {
+    "surname": false,
+    "given_names": false
+   },
+   "names_plain": {
+    "surname": true,
+    "given_names": true
+   },
+   "reasons": [
+    "FIELD_UNVERIFIED",
+    "QUALITY_GLARE_MRZ",
+    "VIZ_ACCENTS_UNCONFIRMED"
+   ],
+   "ms": 2703.301100002136,
+   "paired": false,
+   "false_pairs": 0,
+   "documents": 1
+  },
+  {
+   "case_id": "doc-2026-00023",
+   "kind": "id_card",
+   "quality": "poor",
+   "layout": "separate",
+   "crops_expected": 2,
+   "crops_found": 2,
+   "statuses": [
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": false,
+    "given_names": false,
+    "sex": true,
+    "date_of_birth": true,
+    "place_of_birth": false,
+    "nationality": true,
+    "document_number": true,
+    "date_of_issue": true,
+    "date_of_expiry": true,
+    "authority": true,
+    "issuing_state": true
+   },
+   "accented": {
+    "surname": false,
+    "given_names": false
+   },
+   "names_plain": {
+    "surname": true,
+    "given_names": false
+   },
+   "reasons": [
+    "FIELD_UNVERIFIED",
+    "VIZ_ACCENTS_UNCONFIRMED"
+   ],
+   "ms": 3530.485100000078,
+   "paired": true,
+   "false_pairs": 0,
+   "documents": 1
+  },
+  {
+   "case_id": "doc-2026-00024",
+   "kind": "passport",
+   "quality": "good",
+   "layout": "separate",
+   "crops_expected": 1,
+   "crops_found": 1,
+   "statuses": [
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": true,
+    "given_names": true,
+    "sex": true,
+    "date_of_birth": true,
+    "place_of_birth": true,
+    "nationality": true,
+    "document_number": true,
+    "date_of_issue": true,
+    "date_of_expiry": true,
+    "authority": true,
+    "issuing_state": true
+   },
+   "accented": {
+    "surname": true,
+    "given_names": true
+   },
+   "names_plain": {
+    "surname": true,
+    "given_names": true
+   },
+   "reasons": [
+    "FIELD_UNVERIFIED",
+    "VIZ_ACCENTS_UNCONFIRMED"
+   ],
+   "ms": 2732.5740000014775,
+   "paired": false,
+   "false_pairs": 0,
+   "documents": 1
+  },
+  {
+   "case_id": "doc-2026-00025",
+   "kind": "passport",
+   "quality": "medium",
+   "layout": "separate",
+   "crops_expected": 1,
+   "crops_found": 1,
+   "statuses": [
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": true,
+    "given_names": true,
+    "sex": false,
+    "date_of_birth": true,
+    "place_of_birth": true,
+    "nationality": false,
+    "document_number": false,
+    "date_of_issue": true,
+    "date_of_expiry": true,
+    "authority": true,
+    "issuing_state": true
+   },
+   "accented": {
+    "surname": true
+   },
+   "names_plain": {
+    "surname": true,
+    "given_names": true
+   },
+   "reasons": [
+    "FIELD_UNVERIFIED",
+    "MRZ_BLIND_SPOT",
+    "MRZ_COMPOSITE_FAILED",
+    "MRZ_INVALID_SEX",
+    "MRZ_UNKNOWN_COUNTRY",
+    "VIZ_ACCENTS_UNCONFIRMED",
+    "VIZ_MRZ_DOB_CONFLICT",
+    "VIZ_MRZ_EXPIRY_CONFLICT"
+   ],
+   "ms": 2752.32280000273,
+   "paired": false,
+   "false_pairs": 0,
+   "documents": 1
+  },
+  {
+   "case_id": "doc-2026-00026",
+   "kind": "id_card",
+   "quality": "poor",
+   "layout": "separate",
+   "crops_expected": 2,
+   "crops_found": 2,
+   "statuses": [
+    "to_review",
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": false,
+    "given_names": false,
+    "sex": false,
+    "date_of_birth": false,
+    "place_of_birth": false,
+    "nationality": false,
+    "document_number": false,
+    "date_of_issue": false,
+    "date_of_expiry": true,
+    "authority": false,
+    "issuing_state": false
+   },
+   "accented": {
+    "surname": false,
+    "given_names": false
+   },
+   "names_plain": {
+    "surname": true,
+    "given_names": false
+   },
+   "reasons": [
+    "FIELD_MISSING",
+    "FIELD_UNVERIFIED",
+    "MRZ_NOT_FOUND",
+    "MRZ_UNREADABLE",
+    "NO_MRZ",
+    "PROBABLE_TYPE"
+   ],
+   "ms": 3797.1035999980813,
+   "paired": false,
+   "false_pairs": 0,
+   "documents": 2
+  },
+  {
+   "case_id": "doc-2026-00027",
+   "kind": "id_card",
+   "quality": "good",
+   "layout": "separate",
+   "crops_expected": 2,
+   "crops_found": 2,
+   "statuses": [
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": false,
+    "given_names": true,
+    "sex": true,
+    "date_of_birth": true,
+    "place_of_birth": true,
+    "nationality": true,
+    "document_number": true,
+    "date_of_issue": true,
+    "date_of_expiry": true,
+    "authority": true,
+    "issuing_state": true
+   },
+   "accented": {
+    "surname": false
+   },
+   "names_plain": {
+    "surname": true,
+    "given_names": true
+   },
+   "reasons": [
+    "FIELD_UNVERIFIED",
+    "VIZ_ACCENTS_UNCONFIRMED"
+   ],
+   "ms": 3831.162200000108,
+   "paired": true,
+   "false_pairs": 0,
+   "documents": 1
+  },
+  {
+   "case_id": "doc-2026-00028",
+   "kind": "id_card",
+   "quality": "medium",
+   "layout": "separate",
+   "crops_expected": 2,
+   "crops_found": 2,
+   "statuses": [
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": false,
+    "given_names": true,
+    "sex": true,
+    "date_of_birth": true,
+    "place_of_birth": true,
+    "nationality": true,
+    "document_number": true,
+    "date_of_issue": true,
+    "date_of_expiry": true,
+    "authority": true,
+    "issuing_state": true
+   },
+   "accented": {
+    "surname": false
+   },
+   "names_plain": {
+    "surname": true,
+    "given_names": true
+   },
+   "reasons": [
+    "FIELD_UNVERIFIED",
+    "VIZ_ACCENTS_UNCONFIRMED"
+   ],
+   "ms": 4019.3321999977343,
+   "paired": true,
+   "false_pairs": 0,
+   "documents": 1
+  },
+  {
+   "case_id": "doc-2026-00029",
+   "kind": "passport",
+   "quality": "poor",
+   "layout": "separate",
+   "crops_expected": 1,
+   "crops_found": 1,
+   "statuses": [
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": false,
+    "given_names": false,
+    "sex": false,
+    "date_of_birth": false,
+    "place_of_birth": false,
+    "nationality": false,
+    "document_number": false,
+    "date_of_issue": false,
+    "date_of_expiry": false,
+    "authority": false,
+    "issuing_state": false
+   },
+   "accented": {
+    "surname": false
+   },
+   "names_plain": {
+    "surname": false,
+    "given_names": false
+   },
+   "reasons": [
+    "FIELD_MISSING",
+    "MRZ_NOT_FOUND",
+    "PROBABLE_TYPE"
+   ],
+   "ms": 4872.320099999342,
+   "paired": false,
+   "false_pairs": 0,
+   "documents": 1
+  },
+  {
+   "case_id": "doc-2026-00030",
+   "kind": "id_card",
+   "quality": "good",
+   "layout": "separate",
+   "crops_expected": 2,
+   "crops_found": 2,
+   "statuses": [
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": false,
+    "given_names": true,
+    "usage_name": false,
+    "sex": true,
+    "date_of_birth": true,
+    "place_of_birth": true,
+    "nationality": true,
+    "document_number": true,
+    "date_of_issue": true,
+    "date_of_expiry": true,
+    "authority": true,
+    "issuing_state": true
+   },
+   "accented": {
+    "surname": false,
+    "given_names": true
+   },
+   "names_plain": {
+    "surname": true,
+    "given_names": true
+   },
+   "reasons": [
+    "FIELD_UNVERIFIED",
+    "VIZ_ACCENTS_UNCONFIRMED"
+   ],
+   "ms": 3971.840300000622,
+   "paired": true,
+   "false_pairs": 0,
+   "documents": 1
+  },
+  {
+   "case_id": "doc-2026-00031",
+   "kind": "passport",
+   "quality": "medium",
+   "layout": "separate",
+   "crops_expected": 1,
+   "crops_found": 1,
+   "statuses": [
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": true,
+    "given_names": true,
+    "sex": true,
+    "date_of_birth": true,
+    "place_of_birth": true,
+    "nationality": true,
+    "document_number": true,
+    "date_of_issue": true,
+    "date_of_expiry": true,
+    "authority": true,
+    "issuing_state": true
+   },
+   "accented": {
+    "surname": true
+   },
+   "names_plain": {
+    "surname": true,
+    "given_names": true
+   },
+   "reasons": [
+    "FIELD_UNVERIFIED",
+    "VIZ_ACCENTS_UNCONFIRMED"
+   ],
+   "ms": 2743.6922999986564,
+   "paired": false,
+   "false_pairs": 0,
+   "documents": 1
+  },
+  {
+   "case_id": "doc-2026-00032",
+   "kind": "passport",
+   "quality": "poor",
+   "layout": "separate",
+   "crops_expected": 1,
+   "crops_found": 1,
+   "statuses": [
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": false,
+    "given_names": false,
+    "sex": false,
+    "date_of_birth": false,
+    "place_of_birth": false,
+    "nationality": false,
+    "document_number": false,
+    "date_of_issue": false,
+    "date_of_expiry": false,
+    "authority": false,
+    "issuing_state": false
+   },
+   "accented": {
+    "surname": false,
+    "given_names": false
+   },
+   "names_plain": {
+    "surname": false,
+    "given_names": false
+   },
+   "reasons": [
+    "FIELD_MISSING",
+    "MRZ_NOT_FOUND",
+    "PROBABLE_TYPE"
+   ],
+   "ms": 4400.4103999977815,
+   "paired": false,
+   "false_pairs": 0,
+   "documents": 1
+  },
+  {
+   "case_id": "doc-2026-00033",
+   "kind": "id_card",
+   "quality": "good",
+   "layout": "separate",
+   "crops_expected": 2,
+   "crops_found": 2,
+   "statuses": [
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": true,
+    "given_names": true,
+    "sex": true,
+    "date_of_birth": true,
+    "place_of_birth": true,
+    "nationality": true,
+    "document_number": true,
+    "date_of_issue": true,
+    "date_of_expiry": true,
+    "authority": true,
+    "issuing_state": true
+   },
+   "accented": {
+    "given_names": true
+   },
+   "names_plain": {
+    "surname": true,
+    "given_names": true
+   },
+   "reasons": [
+    "FIELD_UNVERIFIED",
+    "VIZ_ACCENTS_UNCONFIRMED"
+   ],
+   "ms": 3898.5581999986607,
+   "paired": true,
+   "false_pairs": 0,
+   "documents": 1
+  },
+  {
+   "case_id": "doc-2026-00034",
+   "kind": "passport",
+   "quality": "medium",
+   "layout": "separate",
+   "crops_expected": 1,
+   "crops_found": 1,
+   "statuses": [
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": true,
+    "given_names": true,
+    "sex": true,
+    "date_of_birth": true,
+    "place_of_birth": true,
+    "nationality": true,
+    "document_number": true,
+    "date_of_issue": true,
+    "date_of_expiry": true,
+    "authority": true,
+    "issuing_state": true
+   },
+   "accented": {
+    "given_names": true
+   },
+   "names_plain": {
+    "surname": true,
+    "given_names": true
+   },
+   "reasons": [
+    "FIELD_UNVERIFIED",
+    "VIZ_ACCENTS_UNCONFIRMED"
+   ],
+   "ms": 2726.921299999958,
+   "paired": false,
+   "false_pairs": 0,
+   "documents": 1
+  },
+  {
+   "case_id": "doc-2026-00035",
+   "kind": "passport",
+   "quality": "poor",
+   "layout": "separate",
+   "crops_expected": 1,
+   "crops_found": 1,
+   "statuses": [
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": false,
+    "given_names": false,
+    "sex": false,
+    "date_of_birth": false,
+    "place_of_birth": false,
+    "nationality": false,
+    "document_number": false,
+    "date_of_issue": false,
+    "date_of_expiry": false,
+    "authority": false,
+    "issuing_state": false
+   },
+   "accented": {
+    "surname": false
+   },
+   "names_plain": {
+    "surname": false,
+    "given_names": false
+   },
+   "reasons": [
+    "FIELD_MISSING",
+    "MRZ_NOT_FOUND",
+    "PROBABLE_TYPE"
+   ],
+   "ms": 3983.3306999971683,
+   "paired": false,
+   "false_pairs": 0,
+   "documents": 1
+  },
+  {
+   "case_id": "doc-2026-00036",
+   "kind": "id_card",
+   "quality": "good",
+   "layout": "separate",
+   "crops_expected": 2,
+   "crops_found": 2,
+   "statuses": [
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": false,
+    "given_names": true,
+    "sex": true,
+    "date_of_birth": true,
+    "place_of_birth": true,
+    "nationality": true,
+    "document_number": true,
+    "date_of_issue": true,
+    "date_of_expiry": true,
+    "authority": true,
+    "issuing_state": true
+   },
+   "accented": {
+    "surname": false,
+    "given_names": true
+   },
+   "names_plain": {
+    "surname": true,
+    "given_names": true
+   },
+   "reasons": [
+    "FIELD_UNVERIFIED",
+    "VIZ_ACCENTS_UNCONFIRMED"
+   ],
+   "ms": 3897.8179000005184,
+   "paired": true,
+   "false_pairs": 0,
+   "documents": 1
+  },
+  {
+   "case_id": "doc-2026-00037",
+   "kind": "id_card",
+   "quality": "medium",
+   "layout": "separate",
+   "crops_expected": 2,
+   "crops_found": 2,
+   "statuses": [
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": false,
+    "given_names": true,
+    "sex": true,
+    "date_of_birth": true,
+    "place_of_birth": true,
+    "nationality": true,
+    "document_number": true,
+    "date_of_issue": true,
+    "date_of_expiry": true,
+    "authority": true,
+    "issuing_state": true
+   },
+   "accented": {
+    "surname": false,
+    "given_names": true
+   },
+   "names_plain": {
+    "surname": true,
+    "given_names": true
+   },
+   "reasons": [
+    "FIELD_UNVERIFIED",
+    "VIZ_ACCENTS_UNCONFIRMED"
+   ],
+   "ms": 3876.6234000031545,
+   "paired": true,
+   "false_pairs": 0,
+   "documents": 1
+  },
+  {
+   "case_id": "doc-2026-00038",
+   "kind": "id_card",
+   "quality": "poor",
+   "layout": "a4",
+   "crops_expected": 2,
+   "crops_found": 2,
+   "statuses": [
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": false,
+    "given_names": false,
+    "sex": true,
+    "date_of_birth": true,
+    "place_of_birth": false,
+    "nationality": true,
+    "document_number": true,
+    "date_of_issue": false,
+    "date_of_expiry": true,
+    "authority": false,
+    "issuing_state": true
+   },
+   "accented": {
+    "surname": false,
+    "given_names": false
+   },
+   "names_plain": {
+    "surname": true,
+    "given_names": true
+   },
+   "reasons": [
+    "FIELD_UNVERIFIED",
+    "VIZ_ACCENTS_UNCONFIRMED"
+   ],
+   "ms": 3660.5124000016076,
+   "paired": true,
+   "false_pairs": 0,
+   "documents": 1
+  },
+  {
+   "case_id": "doc-2026-00039",
+   "kind": "passport",
+   "quality": "good",
+   "layout": "separate",
+   "crops_expected": 1,
+   "crops_found": 1,
+   "statuses": [
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": true,
+    "given_names": false,
+    "sex": true,
+    "date_of_birth": true,
+    "place_of_birth": true,
+    "nationality": true,
+    "document_number": true,
+    "date_of_issue": true,
+    "date_of_expiry": true,
+    "authority": true,
+    "issuing_state": true
+   },
+   "accented": {
+    "surname": true,
+    "given_names": false
+   },
+   "names_plain": {
+    "surname": true,
+    "given_names": true
+   },
+   "reasons": [
+    "FIELD_UNVERIFIED",
+    "VIZ_ACCENTS_UNCONFIRMED"
+   ],
+   "ms": 2755.7664000014483,
+   "paired": false,
+   "false_pairs": 0,
+   "documents": 1
+  },
+  {
+   "case_id": "doc-2026-00040",
+   "kind": "id_card",
+   "quality": "medium",
+   "layout": "separate",
+   "crops_expected": 2,
+   "crops_found": 2,
+   "statuses": [
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": true,
+    "given_names": true,
+    "usage_name": true,
+    "sex": true,
+    "date_of_birth": true,
+    "place_of_birth": true,
+    "nationality": true,
+    "document_number": true,
+    "date_of_issue": true,
+    "date_of_expiry": true,
+    "authority": true,
+    "issuing_state": true
+   },
+   "accented": {
+    "surname": true
+   },
+   "names_plain": {
+    "surname": true,
+    "given_names": true
+   },
+   "reasons": [
+    "FIELD_UNVERIFIED",
+    "VIZ_ACCENTS_UNCONFIRMED"
+   ],
+   "ms": 3892.5405999980285,
+   "paired": true,
+   "false_pairs": 0,
+   "documents": 1
+  },
+  {
+   "case_id": "doc-2026-00041",
+   "kind": "id_card",
+   "quality": "poor",
+   "layout": "separate",
+   "crops_expected": 2,
+   "crops_found": 2,
+   "statuses": [
+    "to_review",
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": false,
+    "given_names": false,
+    "sex": true,
+    "date_of_birth": true,
+    "place_of_birth": false,
+    "nationality": true,
+    "document_number": true,
+    "date_of_issue": true,
+    "date_of_expiry": true,
+    "authority": false,
+    "issuing_state": true
+   },
+   "accented": {
+    "surname": false,
+    "given_names": false
+   },
+   "names_plain": {
+    "surname": true,
+    "given_names": false
+   },
+   "reasons": [
+    "FIELD_MISSING",
+    "FIELD_UNVERIFIED",
+    "MRZ_BLIND_SPOT",
+    "MRZ_NOT_FOUND",
+    "PROBABLE_TYPE"
+   ],
+   "ms": 3598.045499998989,
+   "paired": false,
+   "false_pairs": 0,
+   "documents": 2
+  },
+  {
+   "case_id": "doc-2026-00042",
+   "kind": "passport",
+   "quality": "good",
+   "layout": "separate",
+   "crops_expected": 1,
+   "crops_found": 1,
+   "statuses": [
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": true,
+    "given_names": true,
+    "usage_name": true,
+    "sex": true,
+    "date_of_birth": true,
+    "place_of_birth": true,
+    "nationality": true,
+    "document_number": true,
+    "date_of_issue": true,
+    "date_of_expiry": true,
+    "authority": true,
+    "issuing_state": true
+   },
+   "accented": {
+    "surname": true,
+    "given_names": true
+   },
+   "names_plain": {
+    "surname": true,
+    "given_names": true
+   },
+   "reasons": [
+    "FIELD_UNVERIFIED",
+    "VIZ_ACCENTS_UNCONFIRMED"
+   ],
+   "ms": 3160.2445999997144,
+   "paired": false,
+   "false_pairs": 0,
+   "documents": 1
+  },
+  {
+   "case_id": "doc-2026-00043",
+   "kind": "id_card",
+   "quality": "medium",
+   "layout": "separate",
+   "crops_expected": 2,
+   "crops_found": 2,
+   "statuses": [
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": false,
+    "given_names": true,
+    "sex": true,
+    "date_of_birth": true,
+    "place_of_birth": true,
+    "nationality": true,
+    "document_number": true,
+    "date_of_issue": true,
+    "date_of_expiry": true,
+    "authority": true,
+    "issuing_state": true
+   },
+   "accented": {
+    "surname": false
+   },
+   "names_plain": {
+    "surname": true,
+    "given_names": true
+   },
+   "reasons": [
+    "FIELD_UNVERIFIED",
+    "QUALITY_GLARE_MRZ",
+    "VIZ_ACCENTS_UNCONFIRMED"
+   ],
+   "ms": 3956.355900001654,
+   "paired": true,
+   "false_pairs": 0,
+   "documents": 1
+  },
+  {
+   "case_id": "doc-2026-00044",
+   "kind": "passport",
+   "quality": "poor",
+   "layout": "separate",
+   "crops_expected": 1,
+   "crops_found": 1,
+   "statuses": [
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": false,
+    "given_names": false,
+    "sex": false,
+    "date_of_birth": false,
+    "place_of_birth": false,
+    "nationality": false,
+    "document_number": false,
+    "date_of_issue": false,
+    "date_of_expiry": false,
+    "authority": false,
+    "issuing_state": false
+   },
+   "accented": {
+    "surname": false
+   },
+   "names_plain": {
+    "surname": false,
+    "given_names": false
+   },
+   "reasons": [
+    "FIELD_MISSING",
+    "MRZ_NOT_FOUND",
+    "PROBABLE_TYPE"
+   ],
+   "ms": 4973.1100000026345,
+   "paired": false,
+   "false_pairs": 0,
+   "documents": 1
+  },
+  {
+   "case_id": "doc-2026-00045",
+   "kind": "passport",
+   "quality": "good",
+   "layout": "separate",
+   "crops_expected": 1,
+   "crops_found": 1,
+   "statuses": [
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": false,
+    "given_names": true,
+    "usage_name": true,
+    "sex": true,
+    "date_of_birth": true,
+    "place_of_birth": true,
+    "nationality": true,
+    "document_number": true,
+    "date_of_issue": true,
+    "date_of_expiry": true,
+    "authority": true,
+    "issuing_state": true
+   },
+   "accented": {
+    "surname": false,
+    "given_names": true
+   },
+   "names_plain": {
+    "surname": false,
+    "given_names": true
+   },
+   "reasons": [
+    "FIELD_UNVERIFIED",
+    "VIZ_ACCENTS_UNCONFIRMED"
+   ],
+   "ms": 2807.2996999981115,
+   "paired": false,
+   "false_pairs": 0,
+   "documents": 1
+  },
+  {
+   "case_id": "doc-2026-00046",
+   "kind": "passport",
+   "quality": "medium",
+   "layout": "separate",
+   "crops_expected": 1,
+   "crops_found": 1,
+   "statuses": [
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": true,
+    "given_names": true,
+    "sex": false,
+    "date_of_birth": true,
+    "place_of_birth": true,
+    "nationality": false,
+    "document_number": false,
+    "date_of_issue": true,
+    "date_of_expiry": true,
+    "authority": true,
+    "issuing_state": true
+   },
+   "accented": {
+    "surname": true
+   },
+   "names_plain": {
+    "surname": true,
+    "given_names": true
+   },
+   "reasons": [
+    "FIELD_UNVERIFIED",
+    "MRZ_BLIND_SPOT",
+    "MRZ_COMPOSITE_FAILED",
+    "MRZ_INVALID_SEX",
+    "MRZ_UNKNOWN_COUNTRY",
+    "VIZ_ACCENTS_UNCONFIRMED",
+    "VIZ_MRZ_DOB_CONFLICT",
+    "VIZ_MRZ_EXPIRY_CONFLICT"
+   ],
+   "ms": 2599.9860000010813,
+   "paired": false,
+   "false_pairs": 0,
+   "documents": 1
+  },
+  {
+   "case_id": "doc-2026-00047",
+   "kind": "passport",
+   "quality": "poor",
+   "layout": "separate",
+   "crops_expected": 1,
+   "crops_found": 1,
+   "statuses": [
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": false,
+    "given_names": false,
+    "usage_name": false,
+    "sex": false,
+    "date_of_birth": false,
+    "place_of_birth": false,
+    "nationality": false,
+    "document_number": false,
+    "date_of_issue": false,
+    "date_of_expiry": false,
+    "authority": false,
+    "issuing_state": false
+   },
+   "accented": {
+    "surname": false
+   },
+   "names_plain": {
+    "surname": false,
+    "given_names": false
+   },
+   "reasons": [
+    "FIELD_MISSING",
+    "MRZ_NOT_FOUND",
+    "PROBABLE_TYPE"
+   ],
+   "ms": 4499.948999997287,
+   "paired": false,
+   "false_pairs": 0,
+   "documents": 1
+  },
+  {
+   "case_id": "doc-2026-00048",
+   "kind": "passport",
+   "quality": "good",
+   "layout": "separate",
+   "crops_expected": 1,
+   "crops_found": 1,
+   "statuses": [
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": true,
+    "given_names": true,
+    "sex": true,
+    "date_of_birth": true,
+    "place_of_birth": true,
+    "nationality": true,
+    "document_number": true,
+    "date_of_issue": true,
+    "date_of_expiry": true,
+    "authority": true,
+    "issuing_state": true
+   },
+   "accented": {
+    "surname": true
+   },
+   "names_plain": {
+    "surname": true,
+    "given_names": true
+   },
+   "reasons": [
+    "FIELD_UNVERIFIED",
+    "VIZ_ACCENTS_UNCONFIRMED"
+   ],
+   "ms": 2793.1214999989606,
+   "paired": false,
+   "false_pairs": 0,
+   "documents": 1
+  },
+  {
+   "case_id": "doc-2026-00049",
+   "kind": "passport",
+   "quality": "medium",
+   "layout": "separate",
+   "crops_expected": 1,
+   "crops_found": 1,
+   "statuses": [
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": false,
+    "given_names": false,
+    "sex": true,
+    "date_of_birth": true,
+    "place_of_birth": true,
+    "nationality": true,
+    "document_number": true,
+    "date_of_issue": true,
+    "date_of_expiry": true,
+    "authority": true,
+    "issuing_state": true
+   },
+   "accented": {
+    "surname": false,
+    "given_names": false
+   },
+   "names_plain": {
+    "surname": true,
+    "given_names": false
+   },
+   "reasons": [
+    "FIELD_UNVERIFIED",
+    "VIZ_ACCENTS_UNCONFIRMED"
+   ],
+   "ms": 2687.7402999998594,
+   "paired": false,
+   "false_pairs": 0,
+   "documents": 1
+  },
+  {
+   "case_id": "doc-2026-00050",
+   "kind": "passport",
+   "quality": "poor",
+   "layout": "separate",
+   "crops_expected": 1,
+   "crops_found": 1,
+   "statuses": [
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": false,
+    "given_names": true,
+    "usage_name": true,
+    "sex": true,
+    "date_of_birth": true,
+    "place_of_birth": true,
+    "nationality": true,
+    "document_number": true,
+    "date_of_issue": true,
+    "date_of_expiry": true,
+    "authority": true,
+    "issuing_state": true
+   },
+   "accented": {
+    "surname": false
+   },
+   "names_plain": {
+    "surname": true,
+    "given_names": true
+   },
+   "reasons": [
+    "FIELD_UNVERIFIED",
+    "VIZ_ACCENTS_UNCONFIRMED"
+   ],
+   "ms": 2787.580299998808,
+   "paired": false,
+   "false_pairs": 0,
+   "documents": 1
+  },
+  {
+   "case_id": "doc-2026-00051",
+   "kind": "id_card",
+   "quality": "good",
+   "layout": "separate",
+   "crops_expected": 2,
+   "crops_found": 2,
+   "statuses": [
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": true,
+    "given_names": true,
+    "sex": true,
+    "date_of_birth": true,
+    "place_of_birth": true,
+    "nationality": true,
+    "document_number": true,
+    "date_of_issue": true,
+    "date_of_expiry": true,
+    "authority": true,
+    "issuing_state": true
+   },
+   "accented": {
+    "given_names": true
+   },
+   "names_plain": {
+    "surname": true,
+    "given_names": true
+   },
+   "reasons": [
+    "FIELD_UNVERIFIED",
+    "VIZ_ACCENTS_UNCONFIRMED"
+   ],
+   "ms": 3802.7341999986675,
+   "paired": true,
+   "false_pairs": 0,
+   "documents": 1
+  },
+  {
+   "case_id": "doc-2026-00052",
+   "kind": "passport",
+   "quality": "medium",
+   "layout": "separate",
+   "crops_expected": 1,
+   "crops_found": 1,
+   "statuses": [
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": true,
+    "given_names": true,
+    "usage_name": true,
+    "sex": true,
+    "date_of_birth": true,
+    "place_of_birth": true,
+    "nationality": true,
+    "document_number": true,
+    "date_of_issue": true,
+    "date_of_expiry": true,
+    "authority": true,
+    "issuing_state": true
+   },
+   "accented": {
+    "surname": true,
+    "given_names": true
+   },
+   "names_plain": {
+    "surname": true,
+    "given_names": true
+   },
+   "reasons": [
+    "FIELD_UNVERIFIED",
+    "VIZ_ACCENTS_UNCONFIRMED"
+   ],
+   "ms": 2718.6314999999013,
+   "paired": false,
+   "false_pairs": 0,
+   "documents": 1
+  },
+  {
+   "case_id": "doc-2026-00053",
+   "kind": "id_card",
+   "quality": "poor",
+   "layout": "a4",
+   "crops_expected": 2,
+   "crops_found": 2,
+   "statuses": [
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": false,
+    "given_names": false,
+    "sex": true,
+    "date_of_birth": true,
+    "place_of_birth": false,
+    "nationality": true,
+    "document_number": true,
+    "date_of_issue": false,
+    "date_of_expiry": true,
+    "authority": false,
+    "issuing_state": true
+   },
+   "accented": {
+    "surname": false,
+    "given_names": false
+   },
+   "names_plain": {
+    "surname": true,
+    "given_names": true
+   },
+   "reasons": [
+    "FIELD_UNVERIFIED",
+    "MRZ_BLIND_SPOT",
+    "VIZ_ACCENTS_UNCONFIRMED"
+   ],
+   "ms": 3136.235599999054,
+   "paired": true,
+   "false_pairs": 0,
+   "documents": 1
+  },
+  {
+   "case_id": "doc-2026-00054",
+   "kind": "passport",
+   "quality": "good",
+   "layout": "separate",
+   "crops_expected": 1,
+   "crops_found": 1,
+   "statuses": [
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": false,
+    "given_names": true,
+    "sex": true,
+    "date_of_birth": true,
+    "place_of_birth": true,
+    "nationality": true,
+    "document_number": true,
+    "date_of_issue": true,
+    "date_of_expiry": true,
+    "authority": true,
+    "issuing_state": true
+   },
+   "accented": {
+    "surname": false,
+    "given_names": true
+   },
+   "names_plain": {
+    "surname": true,
+    "given_names": true
+   },
+   "reasons": [
+    "FIELD_UNVERIFIED",
+    "VIZ_ACCENTS_UNCONFIRMED"
+   ],
+   "ms": 2615.829800000938,
+   "paired": false,
+   "false_pairs": 0,
+   "documents": 1
+  },
+  {
+   "case_id": "doc-2026-00055",
+   "kind": "id_card",
+   "quality": "medium",
+   "layout": "separate",
+   "crops_expected": 2,
+   "crops_found": 2,
+   "statuses": [
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": true,
+    "given_names": true,
+    "sex": true,
+    "date_of_birth": true,
+    "place_of_birth": true,
+    "nationality": true,
+    "document_number": true,
+    "date_of_issue": true,
+    "date_of_expiry": true,
+    "authority": true,
+    "issuing_state": true
+   },
+   "accented": {},
+   "names_plain": {
+    "surname": true,
+    "given_names": true
+   },
+   "reasons": [
+    "FIELD_UNVERIFIED",
+    "VIZ_ACCENTS_UNCONFIRMED"
+   ],
+   "ms": 3791.1051999981282,
+   "paired": true,
+   "false_pairs": 0,
+   "documents": 1
+  },
+  {
+   "case_id": "doc-2026-00056",
+   "kind": "id_card",
+   "quality": "poor",
+   "layout": "a4",
+   "crops_expected": 2,
+   "crops_found": 2,
+   "statuses": [
+    "failed",
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": true,
+    "given_names": false,
+    "usage_name": false,
+    "sex": true,
+    "date_of_birth": true,
+    "place_of_birth": false,
+    "nationality": true,
+    "document_number": true,
+    "date_of_issue": false,
+    "date_of_expiry": true,
+    "authority": false,
+    "issuing_state": true
+   },
+   "accented": {
+    "given_names": false
+   },
+   "names_plain": {
+    "surname": true,
+    "given_names": false
+   },
+   "reasons": [
+    "FIELD_UNVERIFIED",
+    "MRZ_BLIND_SPOT",
+    "TOO_BLURRY"
+   ],
+   "ms": 2699.4674999987183,
+   "paired": false,
+   "false_pairs": 0,
+   "documents": 2
+  },
+  {
+   "case_id": "doc-2026-00057",
+   "kind": "passport",
+   "quality": "good",
+   "layout": "separate",
+   "crops_expected": 1,
+   "crops_found": 1,
+   "statuses": [
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": true,
+    "given_names": true,
+    "sex": true,
+    "date_of_birth": true,
+    "place_of_birth": true,
+    "nationality": true,
+    "document_number": true,
+    "date_of_issue": true,
+    "date_of_expiry": true,
+    "authority": true,
+    "issuing_state": true
+   },
+   "accented": {
+    "given_names": true
+   },
+   "names_plain": {
+    "surname": true,
+    "given_names": true
+   },
+   "reasons": [
+    "FIELD_UNVERIFIED",
+    "VIZ_ACCENTS_UNCONFIRMED"
+   ],
+   "ms": 2894.7899999984656,
+   "paired": false,
+   "false_pairs": 0,
+   "documents": 1
+  },
+  {
+   "case_id": "doc-2026-00058",
+   "kind": "id_card",
+   "quality": "medium",
+   "layout": "separate",
+   "crops_expected": 2,
+   "crops_found": 2,
+   "statuses": [
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": true,
+    "given_names": true,
+    "sex": true,
+    "date_of_birth": true,
+    "place_of_birth": true,
+    "nationality": true,
+    "document_number": true,
+    "date_of_issue": true,
+    "date_of_expiry": true,
+    "authority": true,
+    "issuing_state": true
+   },
+   "accented": {
+    "surname": true
+   },
+   "names_plain": {
+    "surname": true,
+    "given_names": true
+   },
+   "reasons": [
+    "FIELD_UNVERIFIED",
+    "VIZ_ACCENTS_UNCONFIRMED"
+   ],
+   "ms": 3780.9302999994543,
+   "paired": true,
+   "false_pairs": 0,
+   "documents": 1
+  },
+  {
+   "case_id": "doc-2026-00059",
+   "kind": "id_card",
+   "quality": "poor",
+   "layout": "separate",
+   "crops_expected": 2,
+   "crops_found": 2,
+   "statuses": [
+    "to_review",
+    "to_review"
+   ],
+   "auto_validated": false,
+   "silent_errors": [],
+   "fields_correct": {
+    "surname": false,
+    "given_names": false,
+    "sex": true,
+    "date_of_birth": true,
+    "place_of_birth": false,
+    "nationality": true,
+    "document_number": true,
+    "date_of_issue": false,
+    "date_of_expiry": true,
+    "authority": false,
+    "issuing_state": true
+   },
+   "accented": {
+    "surname": false,
+    "given_names": false
+   },
+   "names_plain": {
+    "surname": false,
+    "given_names": false
+   },
+   "reasons": [
+    "FIELD_MISSING",
+    "FIELD_UNVERIFIED",
+    "MRZ_BLIND_SPOT",
+    "MRZ_NOT_FOUND",
+    "PROBABLE_TYPE"
+   ],
+   "ms": 6578.689000001759,
+   "paired": false,
+   "false_pairs": 0,
+   "documents": 2
+  }
+ ]
+}

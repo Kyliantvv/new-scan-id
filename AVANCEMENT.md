@@ -13,7 +13,7 @@
 | 2 — Zone visuelle (G, H, L) | fait sous Windows, à valider sur macOS | G (PP-OCRv6 medium det + rec, fusion), H (MRZ guidée, libellés, dates multilingues), L (confiance, statuts, raisons, alertes), documents UTO synthétiques, worker branché, `idreader analyze`, banc `documents`. Critères chiffrés : à mesurer avec Vision (deux moteurs) et sur vraies pièces. |
 | 3 — Vérification humaine et exports | fait sous Windows, à valider sur macOS | Écran de vérification (zoom, cadres, alternatives, MRZ colorée, raccourcis), édition en ligne, audit avant/après, exports XLSX/CSV, réglages, comptes, statistiques, « Ajouter au jeu de test ». Les trois critères (15 s au clavier, audit visible, Excel) se vérifient à la main sur le Mac. |
 | 4 — Recto/verso, doublons, sans MRZ | fait sous Windows (sans l'étape I), à valider sur macOS | Appariement J (score, auto ≥ 0,8 sans concurrent proche, suggestion sinon), job `pair_batch` à +2 min ou bouton, fusion H + L sur les deux faces, association / dissociation manuelles (touche P), doublons de document, classification sans MRZ. **Reste** : étape I (PDF417, QR, 2D-Doc) via Vision, sur le Mac. |
-| 5 — Exploitation (`deploy/`) | à faire | Fichiers seulement, rien n'est exécuté sous Windows. |
+| 5 — Exploitation (`deploy/`) | fichiers écrits sous Windows, non exécutés ; à valider sur macOS | `deploy/install.sh` (idempotent), plists launchd (API, worker, Caddy), `Caddyfile` (`tls internal`, sous-réseau), `MACHINE.md`. **Reste** : purge automatique, sauvegarde restic, alerte « macOS a changé », vérification « aucun appel sortant », critères (redémarrage, 300 documents). |
 | 6 — IA locale (option) | à faire (Mac) | Décision sur mesures. |
 | 7 — Gabarits | à faire | Demande les statistiques réelles. |
 
@@ -22,9 +22,10 @@
 | Banc | Date | Commit | Moteurs actifs | Résultat | Représentatif |
 |---|---|---|---|---|---|
 | synthétique (MRZ), 300 cas, graine 2026 | 2026-11-25 | `7859b22` | ppocr | MRZ entièrement correcte 80,0 % · sommes valides 92,7 % · 0 erreur auto-validée · p50 225 ms | **non** (Windows, sans Vision ni Tesseract) |
-| documents UTO (A→L), 60 documents, graine 2026 | 2026-11-25 | `c46c8b2` | ppocr | détection 100 % · champs obligatoires tous justes 30,0 % · noms justes 71,7 % sans accents, 38,5 % avec · auto-validation 0 % (un seul moteur) · **0 erreur auto-validée** · p50 3,8 s par document | **non** |
+| documents UTO (A→L, appariement réel), 60 documents, graine 2026 | 2026-11-25 | `910e0c9` | ppocr | détection 100 % · champs obligatoires tous justes 30,0 % · cartes appariées automatiquement 84,4 % · un seul document par pièce 91,7 % · **0 fausse paire** · **0 erreur auto-validée** · noms justes 73,3 % sans accents · p50 3,8 s, p95 5,0 s | **non** |
+| documents UTO (A→L, appariement idéal), 60 documents | 2026-11-25 | `c46c8b2` | ppocr | détection 100 % · champs obligatoires tous justes 30,0 % · noms justes 71,7 % sans accents, 38,5 % avec · auto-validation 0 % (un seul moteur) · **0 erreur auto-validée** · p50 3,8 s par document | **non** |
 
-Rapports : `bench/results/2026-11-24_7859b22_synthetic.md`, `bench/results/2026-11-25_c46c8b2_documents.md` (date UTC dans le nom). Ces chiffres servent de référence pour suivre le code ; aucun poids ni seuil n'est calibré dessus.
+Rapports : `bench/results/2026-11-24_7859b22_synthetic.md`, `bench/results/2026-11-25_910e0c9_documents.md` (date UTC dans le nom). Ces chiffres servent de référence pour suivre le code ; aucun poids ni seuil n'est calibré dessus.
 
 ## Lecture des résultats de la phase 2 (non représentatifs)
 
@@ -114,9 +115,10 @@ Parcours manuel dans Safari et Chrome : `uv run idreader serve`, `uv run idreade
 ```bash
 cd backend
 uv run idreader bench --set synthetic --count 300 --seed 2026
+uv run idreader bench --set documents --count 60 --seed 2026
 ```
 
-Le rapport doit indiquer « Moteurs actifs : vision, tesseract, ppocr » et ne plus porter l'avertissement de non-représentativité. Comparer avec la référence Windows ci-dessus.
+Les rapports doivent indiquer « Moteurs actifs : vision, tesseract, ppocr » et ne plus porter l'avertissement de non-représentativité. Comparer avec la référence Windows ci-dessus. L'installation en service (`deploy/install.sh`) vient en phase 5, une fois la phase 1b faite.
 
 ### 9. Lancer la phase 1b
 

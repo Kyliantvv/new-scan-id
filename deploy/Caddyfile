@@ -1,0 +1,61 @@
+# Caddy — HTTPS sur le réseau local devant l'API IDReader (docs/05_SECURITE_RGPD.md).
+#
+# Variables (fournies par deploy/launchd/fr.idreader.caddy.plist) :
+#   IDR_HOST      nom ou adresse du Mac mini sur le réseau local (ex. idreader.local)
+#   IDR_LAN_CIDR  sous-réseau autorisé, un ou plusieurs CIDR séparés par des espaces
+#                 (ex. 192.168.1.0/24)
+#
+# Aucun appel sortant : `tls internal` (autorité locale de Caddy, pas d'ACME), pas de
+# télémétrie. Le certificat racine à installer sur les postes est dans
+# ~/Library/Application Support/Caddy/pki/authorities/local/root.crt (install.sh l'affiche).
+
+{
+	# Pas d'API d'administration à l'écoute.
+	admin off
+	# Ne pas tenter d'installer la racine dans le trousseau système (demanderait sudo).
+	skip_install_trust
+	# Pas de redirection HTTP→HTTPS sur :80 hors du sous-réseau ; voir le bloc http plus bas.
+	auto_https disable_redirects
+}
+
+{$IDR_HOST} {
+	tls internal
+
+	# Accès réservé au sous-réseau de l'entreprise ; le reste reçoit 403 sans détail.
+	@outside not remote_ip {$IDR_LAN_CIDR} 127.0.0.1/32 ::1/128
+	respond @outside 403 {
+		close
+	}
+
+	# Taille d'upload : IDR_MAX_UPLOAD_MB (50 Mo par fichier) avec une marge pour le multipart.
+	request_body {
+		max_size 60MB
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "no-referrer"
+		# Tout est servi par l'application elle-même (règle « 100 % local »).
+		Content-Security-Policy "default-src 'self'; img-src 'self' blob: data:; style-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+		-Server
+	}
+
+	reverse_proxy 127.0.0.1:8000 {
+		# Événements du lot (SSE) : pas de mise en tampon.
+		flush_interval -1
+	}
+
+	# Pas de journal d'accès : les URL ne contiennent que des identifiants, mais on ne garde
+	# rien d'inutile (docs/05_SECURITE_RGPD.md § Journaux).
+}
+
+# HTTP : redirection vers HTTPS pour le sous-réseau seulement.
+http://{$IDR_HOST} {
+	@outside not remote_ip {$IDR_LAN_CIDR} 127.0.0.1/32 ::1/128
+	respond @outside 403 {
+		close
+	}
+	redir https://{host}{uri} permanent
+}

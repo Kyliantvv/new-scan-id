@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  LaunchAgent : Caddy, HTTPS sur le réseau local (tls internal, accès limité au sous-réseau).
+  Modèle : deploy/install.sh remplace __REPO__, __HOME__, __CADDY__, __IDR_HOST__ et
+  __IDR_LAN_CIDR__ puis copie le fichier dans ~/Library/LaunchAgents/.
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>fr.idreader.caddy</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>__CADDY__</string>
+    <string>run</string>
+    <string>--config</string>
+    <string>__REPO__/deploy/Caddyfile</string>
+    <string>--adapter</string>
+    <string>caddyfile</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>__REPO__/deploy</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>IDR_HOST</key>
+    <string>__IDR_HOST__</string>
+    <key>IDR_LAN_CIDR</key>
+    <string>__IDR_LAN_CIDR__</string>
+    <key>HOME</key>
+    <string>__HOME__</string>
+  </dict>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>ThrottleInterval</key>
+  <integer>10</integer>
+  <key>Umask</key>
+  <integer>63</integer>
+  <key>StandardOutPath</key>
+  <string>__HOME__/Library/Logs/idreader/caddy.log</string>
+  <key>StandardErrorPath</key>
+  <string>__HOME__/Library/Logs/idreader/caddy.err.log</string>
+</dict>
+</plist>

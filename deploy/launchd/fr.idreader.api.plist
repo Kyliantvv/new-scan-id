@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  LaunchAgent : API IDReader (FastAPI, 127.0.0.1:8000).
+  Modèle : deploy/install.sh remplace __REPO__, __HOME__ et __UV__ puis copie le fichier dans
+  ~/Library/LaunchAgents/ du compte idreader (session utilisateur, nécessaire à Vision).
+  Les variables IDR_* sont lues dans __REPO__/.env.
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>fr.idreader.api</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>__UV__</string>
+    <string>run</string>
+    <string>--frozen</string>
+    <string>--no-sync</string>
+    <string>idreader</string>
+    <string>serve</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>__REPO__/backend</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    <key>HF_HUB_OFFLINE</key>
+    <string>1</string>
+    <key>UV_OFFLINE</key>
+    <string>1</string>
+    <key>UV_NO_SYNC</key>
+    <string>1</string>
+  </dict>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>ThrottleInterval</key>
+  <integer>10</integer>
+  <!-- Arrêt propre : SIGTERM, le worker termine le job en cours. -->
+  <key>ExitTimeOut</key>
+  <integer>120</integer>
+  <key>ProcessType</key>
+  <string>Interactive</string>
+  <key>Umask</key>
+  <integer>63</integer>
+  <key>StandardOutPath</key>
+  <string>__HOME__/Library/Logs/idreader/api.log</string>
+  <key>StandardErrorPath</key>
+  <string>__HOME__/Library/Logs/idreader/api.err.log</string>
+</dict>
+</plist>
