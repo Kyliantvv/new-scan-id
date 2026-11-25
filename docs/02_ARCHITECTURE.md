@@ -107,9 +107,9 @@ crops        id, page_id, quad_json, storage_path, width, height, rotation, side
              physical_format (ID1|ID2|ID3|unknown), has_mrz, quality_json
 documents    id, batch_id, status, status_reasons_json, doc_type, doc_code, issuing_state,
              mrz_format, mrz_lines_json, mrz_valid, confidence, alerts_json,
-             front_crop_id, back_crop_id, duplicate_of_id,
+             front_crop_id, back_crop_id, duplicate_of_id, suggested_pair_id, pair_score,
              reviewed_by, reviewed_at, created_at, updated_at
-fields       id, document_id, name, value, value_native, confidence, status (ok|repaired|conflict|missing|manual),
+fields       id, document_id, name, value, value_native, confidence, status (ok|repaired|uncertain|conflict|missing|manual),
              evidence_json, candidates_json, bbox_json (crop_id + quad)
 jobs         id, type, ref_id, batch_id, status (queued|running|done|failed), priority, attempts, progress, stage,
              error_code, worker_id, locked_at, heartbeat_at, run_after, created_at, finished_at
@@ -192,7 +192,7 @@ Package Swift dans `vision-helper/`, cible macOS 15 minimum, utilise les API de 
 | GET | `/documents/{id}` | détail : champs, preuves, alternatives, recadrages, cadres |
 | PATCH | `/documents/{id}/fields` | corrections (journalisées) |
 | POST | `/documents/{id}/validate` · `/reject` · `/reprocess` · `/golden` (admin) · DELETE `/documents/{id}` | actions |
-| POST | `/documents/pair` · `/documents/{id}/unpair` | recto/verso |
+| POST | `/documents/pair` (corps : `first_id`, `second_id`) · `/documents/{id}/unpair` · `/batches/{id}/pair` (« Lancer l'appariement ») | recto/verso |
 | GET | `/crops/{id}/image` · `/pages/{id}/image` · `/files/{id}/original` | images (authentifiées, `Cache-Control: no-store`) |
 | POST | `/exports` (corps JSON : `format`, `batch`, `status`, `ids`, `columns`, `include_status`) | export |
 | GET | `/events?batch=` | SSE : progression des jobs |

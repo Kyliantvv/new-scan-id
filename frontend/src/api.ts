@@ -125,6 +125,16 @@ export interface DocumentDetail {
   back: CropInfo | null;
   mrz: MrzDetail | null;
   golden_enabled: boolean;
+  paired: boolean;
+  pair_score: number | null;
+  suggestion: PairSuggestion | null;
+}
+
+export interface PairSuggestion {
+  id: string;
+  score: number | null;
+  file_name: string | null;
+  crop_id: string | null;
 }
 
 export interface ExportRequest {
@@ -245,6 +255,10 @@ export const api = {
   reprocess: (id: string) => request<void>("POST", `/api/documents/${encodeURIComponent(id)}/reprocess`),
   deleteDocument: (id: string) => request<void>("DELETE", `/api/documents/${encodeURIComponent(id)}`),
   addToGolden: (id: string) => request<void>("POST", `/api/documents/${encodeURIComponent(id)}/golden`),
+  pairDocuments: (firstId: string, secondId: string) =>
+    request<DocumentDetail>("POST", "/api/documents/pair", { first_id: firstId, second_id: secondId }),
+  unpair: (id: string) => request<string[]>("POST", `/api/documents/${encodeURIComponent(id)}/unpair`),
+  runPairing: (batchId: string) => request<void>("POST", `/api/batches/${encodeURIComponent(batchId)}/pair`),
   getSettings: () => request<AppSettings>("GET", "/api/admin/settings"),
   putSettings: (s: AppSettings) => request<AppSettings>("PUT", "/api/admin/settings", s),
   listUsers: () => request<UserRow[]>("GET", "/api/admin/users"),

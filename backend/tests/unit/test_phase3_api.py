@@ -267,3 +267,21 @@ def test_confusions_helper() -> None:
 
     assert confusions("L898", "L8B8") == [("9", "B")]
     assert confusions("AB", "ABC") == []
+
+
+def test_pairing_endpoints(operator_client, app) -> None:
+    a = _seed(app)
+    r = operator_client.post(f"/api/batches/{a['batch']}/pair")
+    assert r.status_code == 202
+    with app.state.session_factory() as db:
+        job = db.scalars(select(m.Job).where(m.Job.type == m.JobType.PAIR_BATCH)).one()
+        assert job.ref_id == a["batch"]
+    # Sans artefacts d'analyse : association refusée avec un code stable.
+    r = operator_client.post(
+        "/api/documents/pair", json={"first_id": a["doc"], "second_id": a["doc"]}
+    )
+    assert r.status_code == 409 and r.json()["detail"]["code"] == "PAIR_INVALID"
+    r = operator_client.post(f"/api/documents/{a['doc']}/unpair")
+    assert r.status_code == 409 and r.json()["detail"]["code"] == "NOT_PAIRED"
+    d = operator_client.get(f"/api/documents/{a['doc']}").json()
+    assert d["paired"] is False and d["suggestion"] is None

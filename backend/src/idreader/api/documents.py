@@ -10,7 +10,7 @@ import json
 import logging
 import re
 import shutil
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 from typing import Annotated, Any
 
@@ -29,7 +29,8 @@ from idreader.core.rows import document_rows
 from idreader.pipeline.consolidate import ALERT_LABELS, REASON_LABELS
 from idreader.pipeline.mrz.decode import MrzResult
 from idreader.pipeline.mrz.formats import SPECS, resolve_checks
-from idreader.worker.queue import enqueue
+from idreader.worker.queue import enqueue, schedule_pairing
+from idreader.worker.store import PairError, mark_duplicates, merge_documents, unpair_document
 
 log = logging.getLogger(__name__)
 router = APIRouter(tags=["documents"])
@@ -110,6 +111,13 @@ class ReasonOut(BaseModel):
     label: str
 
 
+class SuggestionOut(BaseModel):
+    id: str
+    score: float | None
+    file_name: str | None
+    crop_id: str | None
+
+
 class DocumentOut(BaseModel):
     id: str
     batch_id: str
@@ -128,10 +136,18 @@ class DocumentOut(BaseModel):
     back: CropOut | None
     mrz: MrzOut | None
     golden_enabled: bool
+    paired: bool
+    pair_score: float | None
+    suggestion: SuggestionOut | None
 
 
 class FieldsIn(BaseModel):
     fields: dict[str, str | None] = {}
+
+
+class PairIn(BaseModel):
+    first_id: str
+    second_id: str
 
 
 # --- Lecture ----------------------------------------------------------------------------
@@ -274,6 +290,22 @@ def document_out(db: Session, settings: Settings, doc: m.Document) -> DocumentOu
         back=back,
         mrz=_mrz_out(settings, doc, [("front", front_crop), ("back", back_crop)]),
         golden_enabled=app_settings.load(db, settings).golden_enabled,
+        paired=bool(doc.front_crop_id and doc.back_crop_id),
+        pair_score=doc.pair_score,
+        suggestion=_suggestion(db, doc),
+    )
+
+
+def _suggestion(db: Session, doc: m.Document) -> SuggestionOut | None:
+    other = db.get(m.Document, doc.suggested_pair_id) if doc.suggested_pair_id else None
+    if other is None:
+        return None
+    crop, _ = _crop_out(db, other.front_crop_id or other.back_crop_id)
+    return SuggestionOut(
+        id=other.id,
+        score=doc.pair_score,
+        file_name=crop.file_name if crop else None,
+        crop_id=crop.id if crop else None,
     )
 
 
@@ -520,6 +552,55 @@ def add_to_golden(document_id: str, auth: AdminDep, db: DbDep, settings: Setting
     db.commit()
     log.info("document added to golden document_id=%s", doc.id)
     return Response(status_code=201)
+
+
+# --- Recto / verso ------------------------------------------------------------------------
+
+PAIR_ERRORS = {
+    "PAIR_INVALID": "Association impossible : même document ou lots différents.",
+    "PAIR_ALREADY_PAIRED": "L'un des documents a déjà un recto et un verso : dissociez-le d'abord.",
+    "PAIR_TWO_MRZ": "Les deux faces portent une MRZ : ce sont deux documents distincts.",
+    "PAIR_ARTIFACTS_MISSING": "Analyse introuvable pour l'une des faces : relancez l'analyse.",
+    "NOT_PAIRED": "Ce document n'a pas de recto et de verso associés.",
+}
+
+
+@router.post("/documents/pair")
+def pair_documents(body: PairIn, auth: AuthDep, db: DbDep, settings: SettingsDep) -> DocumentOut:
+    """Association manuelle recto/verso (touche P de l'écran de vérification)."""
+    first = get_document(db, body.first_id)
+    second = get_document(db, body.second_id)
+    try:
+        doc = merge_documents(db, settings, first, second, user_id=auth.user_id)
+    except PairError as exc:
+        raise api_error(409, exc.code, PAIR_ERRORS[exc.code]) from exc
+    mark_duplicates(db, doc.batch_id)
+    db.commit()
+    return document_out(db, settings, doc)
+
+
+@router.post("/documents/{document_id}/unpair")
+def unpair(document_id: str, auth: AuthDep, db: DbDep, settings: SettingsDep) -> list[str]:
+    doc = get_document(db, document_id)
+    batch_id = doc.batch_id
+    try:
+        restored = unpair_document(db, settings, doc, user_id=auth.user_id)
+    except PairError as exc:
+        raise api_error(409, exc.code, PAIR_ERRORS[exc.code]) from exc
+    mark_duplicates(db, batch_id)
+    db.commit()
+    return [d.id for d in restored]
+
+
+@router.post("/batches/{batch_id}/pair", status_code=202)
+def run_pairing(batch_id: str, auth: AuthDep, db: DbDep) -> Response:
+    """Bouton « Lancer l'appariement » : tout de suite si les analyses sont terminées."""
+    if db.get(m.Batch, batch_id) is None:
+        raise api_error(404, "BATCH_NOT_FOUND", "Lot introuvable.")
+    schedule_pairing(db, batch_id, timedelta(0))
+    audit.record(db, "pairing_requested", user_id=auth.user_id, entity="batch", entity_id=batch_id)
+    db.commit()
+    return Response(status_code=202)
 
 
 # --- Images -------------------------------------------------------------------------------

@@ -27,6 +27,7 @@ from idreader.pipeline.extract import Extraction, extract
 from idreader.pipeline.ingest import PageInfo, RGBImage, load_pages
 from idreader.pipeline.mrz.locate import crop_band
 from idreader.pipeline.mrz.stage import MrzStage, run_mrz
+from idreader.pipeline.pairing import combine_viz
 from idreader.pipeline.quality import CARD_WIDTH_MM, PASSPORT_WIDTH_MM, Quality, measure, mrz_glare
 from idreader.pipeline.viz_ocr import VizOcr, run_viz_ocr
 
@@ -62,10 +63,69 @@ class CropAnalysis:
     classification: Classification
     result: DocumentResult
     ms: dict[str, float] = field(default_factory=dict)
+    mrz_glare: bool = False
 
     @property
     def has_mrz(self) -> bool:
         return self.mrz.result is not None
+
+    def evidence(self) -> CropEvidence:
+        return CropEvidence(
+            mrz=self.mrz,
+            viz=self.viz,
+            classification=self.classification,
+            quality_alerts=list(self.quality.alerts),
+            mrz_glare=self.mrz_glare,
+        )
+
+
+@dataclass
+class CropEvidence:
+    """Ce dont l'appariement a besoin d'une face (relu depuis les artefacts JSON)."""
+
+    mrz: MrzStage
+    viz: VizOcr
+    classification: Classification
+    quality_alerts: list[str]
+    mrz_glare: bool = False
+
+
+@dataclass
+class PairAnalysis:
+    result: DocumentResult
+    viz: VizOcr  # zone visuelle fusionnée (cadres du verso décalés, voir pairing.py)
+    extraction: Extraction
+    classification: Classification
+    mrz: MrzStage
+    mrz_side: str  # front | back
+
+
+def consolidate_pair(
+    front: CropEvidence,
+    back: CropEvidence,
+    *,
+    today: date,
+    threshold: float,
+    allow_specimen: bool = False,
+) -> PairAnalysis:
+    """Recto + verso : la MRZ d'une face confirme la zone visuelle des deux (03 § J, H, L)."""
+    mrz_side = "back" if back.mrz.result is not None or front.mrz.result is None else "front"
+    side = back if mrz_side == "back" else front
+    viz = combine_viz(front.viz, back.viz)
+    extraction = extract(viz, side.mrz.result, today=today)
+    classification = side.classification if side.mrz.result is not None else front.classification
+    result = consolidate(
+        mrz=side.mrz.result,
+        extraction=extraction,
+        classification=classification,
+        today=today,
+        threshold=threshold,
+        quality_alerts=sorted({*front.quality_alerts, *back.quality_alerts}),
+        mrz_glare=side.mrz_glare,
+        mrz_failure=side.mrz.failure,
+        allow_specimen=allow_specimen,
+    )
+    return PairAnalysis(result, viz, extraction, classification, side.mrz, mrz_side)
 
 
 @dataclass
@@ -185,6 +245,7 @@ def analyze_crop(
         classification=classification,
         result=result,
         ms=ms,
+        mrz_glare=glare,
     )
 
 

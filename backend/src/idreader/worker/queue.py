@@ -162,3 +162,22 @@ def fail(engine: Engine, job_id: str, worker_id: str, error_code: str) -> bool:
             .values(status=JobStatus.FAILED, error_code=error_code, finished_at=now)
         ).rowcount
     return bool(n)
+
+
+def schedule_pairing(db: Session, batch_id: str, delay: timedelta) -> Job:
+    """Programme (ou repousse) l'appariement du lot : un seul job `pair_batch` en attente.
+
+    Déclenchement : tous les fichiers analysés et aucun ajout depuis `delay`
+    (docs/03_PIPELINE_ANALYSE.md § J) ; `delay` nul pour le bouton « Lancer l'appariement ».
+    """
+    when = utcnow() + delay
+    job = db.scalars(
+        select(Job).where(
+            Job.type == JobType.PAIR_BATCH, Job.batch_id == batch_id, Job.status == JobStatus.QUEUED
+        )
+    ).first()
+    if job is None:
+        return enqueue(db, JobType.PAIR_BATCH, ref_id=batch_id, batch_id=batch_id, run_after=when)
+    job.run_after = when if delay.total_seconds() == 0 else max(job.run_after, when)
+    db.flush()
+    return job

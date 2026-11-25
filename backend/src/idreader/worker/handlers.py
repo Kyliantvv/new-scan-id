@@ -93,6 +93,13 @@ def process_file(ctx: JobContext) -> None:
     run(ctx)
 
 
+def pair_batch(ctx: JobContext) -> None:
+    from idreader.worker.pair import pair_batch as run
+
+    run(ctx)
+
+
 HANDLERS: dict[str, Handler] = {
     JobType.PROCESS_FILE: process_file,
+    JobType.PAIR_BATCH: pair_batch,
 }

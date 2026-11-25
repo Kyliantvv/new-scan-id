@@ -22,7 +22,7 @@ from typing import Any
 
 import cv2
 from pydantic import BaseModel
-from sqlalchemy import or_, select
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from idreader.core import app_settings
@@ -30,20 +30,16 @@ from idreader.core import models as m
 from idreader.core.config import Settings
 from idreader.core.db import make_session_factory, new_id
 from idreader.engines.registry import available_engines, available_viz_engines
-from idreader.pipeline.analyze import CropAnalysis, Engines, analyze_file
-from idreader.pipeline.consolidate import DocState
+from idreader.pipeline.analyze import Engines, analyze_file
 from idreader.pipeline.ingest import IngestError, RGBImage
 from idreader.worker.handlers import JobContext, JobError, sha256_of
+from idreader.worker.pair import PAIR_DELAY
+from idreader.worker.queue import schedule_pairing
+from idreader.worker.store import create_document, detach_crops
 
 log = logging.getLogger(__name__)
 
 _ENGINES: dict[tuple[Path, Path | None], Engines] = {}
-
-DOC_STATUS = {
-    DocState.AUTO_VALIDATED: m.DocumentStatus.AUTO_VALIDATED,
-    DocState.TO_REVIEW: m.DocumentStatus.TO_REVIEW,
-    DocState.FAILED: m.DocumentStatus.FAILED,
-}
 
 
 def engines_for(settings: Settings) -> Engines:
@@ -70,29 +66,12 @@ def _write_json(path: Path, model: BaseModel | dict[str, Any]) -> None:
     path.write_text(json.dumps(data, ensure_ascii=False, indent=1), encoding="utf-8")
 
 
-def _field_bbox(ca: CropAnalysis, slot_ids: list[int]) -> dict[str, Any] | None:
-    boxes = [s.bbox for s in ca.viz.slots if s.id in slot_ids]
-    if not boxes:
-        return None
-    x0 = min(b[0] for b in boxes)
-    y0 = min(b[1] for b in boxes)
-    x1 = max(b[2] for b in boxes)
-    y1 = max(b[3] for b in boxes)
-    return {"x": x0, "y": y0, "w": x1 - x0, "h": y1 - y0}
-
-
-def _remove_previous(db: Session, file_id: str, batch_dir: Path) -> None:
+def _remove_previous(db: Session, settings: Settings, file_id: str, batch_dir: Path) -> None:
     pages = db.scalars(select(m.Page).where(m.Page.file_id == file_id)).all()
     page_ids = [p.id for p in pages]
     crops = db.scalars(select(m.Crop).where(m.Crop.page_id.in_(page_ids))).all() if pages else []
-    crop_ids = [c.id for c in crops]
-    if crop_ids:
-        for doc in db.scalars(
-            select(m.Document).where(
-                or_(m.Document.front_crop_id.in_(crop_ids), m.Document.back_crop_id.in_(crop_ids))
-            )
-        ):
-            db.delete(doc)
+    # Documents de ces recadrages supprimés ; l'autre face d'une paire retrouve le sien.
+    detach_crops(db, settings, [c.id for c in crops])
     for c in crops:
         (batch_dir / c.storage_path).unlink(missing_ok=True)
         shutil.rmtree(batch_dir / "artifacts" / c.id, ignore_errors=True)
@@ -100,54 +79,6 @@ def _remove_previous(db: Session, file_id: str, batch_dir: Path) -> None:
         (batch_dir / p.storage_path).unlink(missing_ok=True)
         db.delete(p)
     db.flush()
-
-
-def _document(ca: CropAnalysis, batch_id: str, crop_id: str) -> m.Document:
-    r = ca.result
-    mrz = ca.mrz.result
-    doc = m.Document(
-        id=new_id(),
-        batch_id=batch_id,
-        status=DOC_STATUS[r.status],
-        status_reasons_json=[
-            {"code": x.code, "field": x.field, "label": x.label} for x in r.reasons
-        ],
-        doc_type=r.doc_type.value,
-        doc_code=ca.classification.doc_code,
-        issuing_state=r.issuing_state,
-        mrz_format=mrz.format.value if mrz else None,
-        mrz_lines_json=list(mrz.lines) if mrz else [],
-        mrz_valid=r.mrz_valid,
-        confidence=r.confidence,
-        alerts_json=list(r.alerts),
-    )
-    if ca.side == "back":
-        doc.back_crop_id = crop_id
-    else:
-        doc.front_crop_id = crop_id
-    return doc
-
-
-def _fields(ca: CropAnalysis, doc_id: str) -> list[m.DocumentField]:
-    out = []
-    for name in m.FIELD_NAMES:
-        f = ca.result.fields.get(name)
-        if f is None:
-            continue
-        out.append(
-            m.DocumentField(
-                document_id=doc_id,
-                name=name,
-                value=f.value,
-                value_native=f.value_native,
-                confidence=f.confidence,
-                status=f.status.value,
-                evidence_json=[*f.evidence, {"sources": f.sources, "reasons": f.reasons}],
-                candidates_json=list(f.candidates),
-                bbox_json=_field_bbox(ca, f.slot_ids),
-            )
-        )
-    return out
 
 
 def process_file(ctx: JobContext) -> None:
@@ -191,7 +122,7 @@ def process_file(ctx: JobContext) -> None:
 
     batch_dir = settings.data_dir / "batches" / batch_id
     with make_session_factory(ctx.engine, immediate=True)() as db:
-        _remove_previous(db, file_id, batch_dir)
+        _remove_previous(db, settings, file_id, batch_dir)
         page_ids: list[str] = []
         for info, image in zip(fa.pages, fa.page_images, strict=True):
             page = m.Page(
@@ -236,11 +167,19 @@ def process_file(ctx: JobContext) -> None:
             _write_json(art / "timings.json", {"ms": ca.ms, "detection": ca.detection_source})
             db.add(crop)
             db.flush()
-            doc = _document(ca, batch_id, crop.id)
-            db.add(doc)
-            db.flush()
-            db.add_all(_fields(ca, doc.id))
+            doc = create_document(
+                db,
+                batch_id=batch_id,
+                result=ca.result,
+                classification=ca.classification,
+                mrz=ca.mrz,
+                viz=ca.viz,
+                front_crop_id=None if ca.side == "back" else crop.id,
+                back_crop_id=crop.id if ca.side == "back" else None,
+            )
             statuses[doc.status] = statuses.get(doc.status, 0) + 1
+        # Appariement recto/verso quand le lot n'a plus reçu de fichier depuis 2 minutes.
+        schedule_pairing(db, batch_id, PAIR_DELAY)
         db.commit()
     ctx.report(1.0, "done")
     log.info(

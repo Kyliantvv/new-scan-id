@@ -12,7 +12,7 @@
 | 1b — Vision, calibration, banc golden | à faire (Mac) | Demande macOS et de vraies pièces. |
 | 2 — Zone visuelle (G, H, L) | fait sous Windows, à valider sur macOS | G (PP-OCRv6 medium det + rec, fusion), H (MRZ guidée, libellés, dates multilingues), L (confiance, statuts, raisons, alertes), documents UTO synthétiques, worker branché, `idreader analyze`, banc `documents`. Critères chiffrés : à mesurer avec Vision (deux moteurs) et sur vraies pièces. |
 | 3 — Vérification humaine et exports | fait sous Windows, à valider sur macOS | Écran de vérification (zoom, cadres, alternatives, MRZ colorée, raccourcis), édition en ligne, audit avant/après, exports XLSX/CSV, réglages, comptes, statistiques, « Ajouter au jeu de test ». Les trois critères (15 s au clavier, audit visible, Excel) se vérifient à la main sur le Mac. |
-| 4 — Recto/verso, doublons, sans MRZ | à faire | Sans l'étape I (codes-barres, via Vision). |
+| 4 — Recto/verso, doublons, sans MRZ | fait sous Windows (sans l'étape I), à valider sur macOS | Appariement J (score, auto ≥ 0,8 sans concurrent proche, suggestion sinon), job `pair_batch` à +2 min ou bouton, fusion H + L sur les deux faces, association / dissociation manuelles (touche P), doublons de document, classification sans MRZ. **Reste** : étape I (PDF417, QR, 2D-Doc) via Vision, sur le Mac. |
 | 5 — Exploitation (`deploy/`) | à faire | Fichiers seulement, rien n'est exécuté sous Windows. |
 | 6 — IA locale (option) | à faire (Mac) | Décision sur mesures. |
 | 7 — Gabarits | à faire | Demande les statistiques réelles. |

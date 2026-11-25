@@ -4,8 +4,9 @@ Mesure, par champ, l'exactitude des valeurs finales (accents compris), la détec
 documents, les statuts et la précision de l'auto-validation. Les documents UTO sont des
 spécimens : le banc lève le motif SPECIMEN_DOCUMENT (`allow_specimen`) pour mesurer le reste.
 
-Tant que l'appariement recto/verso (étape J, phase 4) n'existe pas, la valeur retenue pour
-un champ est celle du recadrage le plus confiant parmi ceux du cas (appariement idéal).
+Recto et verso sont réunis par l'appariement réel (étape J) appliqué à tout le jeu, les
+fichiers étant pris dans l'ordre des cas, comme un lot téléversé : une paire fausse entre
+deux cas voisins est comptée.
 """
 
 from __future__ import annotations
@@ -30,8 +31,15 @@ from idreader.bench.runner import (
     write_lf,
 )
 from idreader.core.config import REPO_ROOT, Settings
-from idreader.pipeline.analyze import CropAnalysis, Engines, analyze_file
-from idreader.pipeline.consolidate import MANDATORY, OUTPUT_FIELDS, DocState, FieldState
+from idreader.pipeline.analyze import CropAnalysis, Engines, analyze_file, consolidate_pair
+from idreader.pipeline.consolidate import (
+    MANDATORY,
+    OUTPUT_FIELDS,
+    DocState,
+    DocumentResult,
+    FieldState,
+)
+from idreader.pipeline.pairing import Side, pair_sides
 
 PROVEN = {FieldState.OK, FieldState.REPAIRED}
 
@@ -52,15 +60,23 @@ class DocResult:
     names_plain: dict[str, bool] = field(default_factory=dict)  # noms justes, accents ignorés
     reasons: list[str] = field(default_factory=list)
     ms: float = 0.0
+    paired: bool = False  # carte : recto et verso réunis par l'appariement automatique
+    false_pairs: int = 0  # paires automatiques avec un recadrage d'un autre cas
+    documents: int = 0  # documents produits pour le cas (1 attendu)
 
 
-def _merged(crops: list[CropAnalysis]) -> dict[str, str | None]:
-    best: dict[str, tuple[float, str | None]] = {}
-    for ca in crops:
-        for name, f in ca.result.fields.items():
-            if f.value and (name not in best or f.confidence > best[name][0]):
-                best[name] = (f.confidence, f.value)
-    return {k: v for k, (_, v) in best.items()}
+@dataclass
+class _Analysed:
+    case: DocCase
+    crops: list[CropAnalysis]
+    crop_files: list[int]  # rang du fichier (dans le cas) de chaque recadrage
+    ms: float
+
+
+@dataclass
+class _FinalDoc:
+    result: DocumentResult
+    crop_keys: tuple[str, ...]  # « case_id#rang » des recadrages du document
 
 
 def _plain(text: str | None) -> str:
@@ -71,52 +87,128 @@ def _plain(text: str | None) -> str:
     return " ".join("".join(c for c in base if not unicodedata.combining(c)).upper().split())
 
 
-def run_doc_case(
+def analyze_case(
     case: DocCase, cases_dir: Path, engines: Engines, today: date, threshold: float
-) -> DocResult:
+) -> _Analysed:
     t0 = time.perf_counter()
     crops: list[CropAnalysis] = []
-    for name in case.images:
+    files: list[int] = []
+    for i, name in enumerate(case.images):
         fa = analyze_file(
             cases_dir / name, engines, today=today, threshold=threshold, allow_specimen=True
         )
         crops.extend(fa.crops)
-    ms = (time.perf_counter() - t0) * 1000
-    merged = _merged(crops)
+        files.extend([i] * len(fa.crops))
+    return _Analysed(case, crops, files, (time.perf_counter() - t0) * 1000)
+
+
+def pair_all(
+    analysed: list[_Analysed], today: date, threshold: float
+) -> tuple[dict[str, list[_FinalDoc]], list[tuple[str, str]]]:
+    """Étape J sur tout le jeu, fichiers dans l'ordre des cas (comme un lot téléversé).
+
+    Renvoie les documents finaux par cas (un document apparié revient au cas de la face
+    MRZ) et les paires automatiques formées (clés des deux recadrages).
+    """
+    sides: list[Side] = []
+    by_key: dict[str, tuple[str, CropAnalysis]] = {}
+    order = 0
+    for a in analysed:
+        offset = order
+        order += len(a.case.images)
+        for i, (ca, f) in enumerate(zip(a.crops, a.crop_files, strict=True)):
+            key = f"{a.case.case_id}#{i}"
+            by_key[key] = (a.case.case_id, ca)
+            sides.append(
+                Side(
+                    key=key,
+                    file_order=offset + f + 1,
+                    page_key=f"{a.case.case_id}/{f}/{ca.page_index}",
+                    physical_format=ca.physical_format,
+                    mrz=ca.mrz.result,
+                    texts=tuple(s.text for s in ca.viz.slots),
+                )
+            )
+    auto, _ = pair_sides(sides)
+    docs: dict[str, list[_FinalDoc]] = {a.case.case_id: [] for a in analysed}
+    used: set[str] = set()
+    pairs: list[tuple[str, str]] = []
+    for p in auto:
+        owner, mrz_ca = by_key[p.mrz_key]
+        _, other_ca = by_key[p.other_key]
+        res = mrz_ca.mrz.result
+        mrz_is_front = res is not None and res.format.value != "TD1"
+        front, back = (mrz_ca, other_ca) if mrz_is_front else (other_ca, mrz_ca)
+        pa = consolidate_pair(
+            front.evidence(),
+            back.evidence(),
+            today=today,
+            threshold=threshold,
+            allow_specimen=True,
+        )
+        docs[owner].append(_FinalDoc(pa.result, (p.mrz_key, p.other_key)))
+        used |= {p.mrz_key, p.other_key}
+        pairs.append((p.mrz_key, p.other_key))
+    for key, (owner, ca) in by_key.items():
+        if key not in used:
+            docs[owner].append(_FinalDoc(ca.result, (key,)))
+    return docs, pairs
+
+
+def _main(docs: list[_FinalDoc]) -> _FinalDoc | None:
+    """Le document qui représente le cas : apparié, sinon avec MRZ, sinon le plus confiant."""
+    if not docs:
+        return None
+    return max(
+        docs,
+        key=lambda d: (len(d.crop_keys), d.result.mrz_valid is not None, d.result.confidence),
+    )
+
+
+def score_case(a: _Analysed, docs: list[_FinalDoc], pairs: list[tuple[str, str]]) -> DocResult:
+    case = a.case
+    cid = case.case_id
+    main = _main(docs)
+    values = {k: f.value for k, f in main.result.fields.items()} if main else {}
     truth = case.fields
-    correct = {k: merged.get(k) == truth.get(k) for k in OUTPUT_FIELDS if truth.get(k)}
+    correct = {k: values.get(k) == truth.get(k) for k in OUTPUT_FIELDS if truth.get(k)}
     accented = {
         k: correct[k]
         for k in ("surname", "given_names")
         if truth.get(k) and not str(truth[k]).isascii()
     }
     names_plain = {
-        k: _plain(merged.get(k)) == _plain(truth.get(k))
+        k: _plain(values.get(k)) == _plain(truth.get(k))
         for k in ("surname", "given_names")
         if truth.get(k)
     }
     silent: list[str] = []
-    for ca in crops:
-        if ca.result.status is not DocState.AUTO_VALIDATED:
+    for d in docs:
+        if d.result.status is not DocState.AUTO_VALIDATED:
             continue
-        for name, f in ca.result.fields.items():
+        for name, f in d.result.fields.items():
             if f.status in PROVEN and f.value and truth.get(name) and f.value != truth[name]:
                 silent.append(name)
+    prefix = f"{cid}#"
+    mine = [p for p in pairs if any(k.startswith(prefix) for k in p)]
     return DocResult(
-        case_id=case.case_id,
+        case_id=cid,
         kind=case.kind,
         quality=case.quality,
         layout=case.layout,
         crops_expected=1 if case.kind == "passport" else 2,
-        crops_found=len(crops),
-        statuses=[ca.result.status.value for ca in crops],
-        auto_validated=any(ca.result.status is DocState.AUTO_VALIDATED for ca in crops),
+        crops_found=len(a.crops),
+        statuses=[d.result.status.value for d in docs],
+        auto_validated=main is not None and main.result.status is DocState.AUTO_VALIDATED,
         silent_errors=silent,
         fields_correct=correct,
         accented=accented,
         names_plain=names_plain,
-        reasons=sorted({r.code for ca in crops for r in ca.result.reasons}),
-        ms=ms,
+        reasons=sorted({r.code for d in docs for r in d.result.reasons}),
+        ms=a.ms,
+        paired=any(all(k.startswith(prefix) for k in p) for p in mine),
+        false_pairs=sum(not all(k.startswith(prefix) for k in p) for p in mine),
+        documents=len(docs),
     )
 
 
@@ -126,6 +218,8 @@ def summarize_docs(results: list[DocResult]) -> dict[str, Any]:
     auto = [r for r in results if r.auto_validated]
     times = sorted(r.ms for r in results)
     accented = [v for r in results for v in r.accented.values()]
+    # Cartes dont les deux faces ont été détectées : l'appariement peut les réunir.
+    cards = [r for r in results if r.kind != "passport" and r.crops_found == 2]
     return {
         "cases": n,
         "detection_ok_pct": _pct(sum(r.crops_found == r.crops_expected for r in results), n),
@@ -138,6 +232,9 @@ def summarize_docs(results: list[DocResult]) -> dict[str, Any]:
         "automation_pct": _pct(len(auto), n),
         "auto_precision_pct": _pct(sum(not r.silent_errors for r in auto), len(auto)),
         "silent_errors": [r.case_id for r in results if r.silent_errors],
+        "pairs_formed_pct": _pct(sum(r.paired for r in cards), len(cards)),
+        "false_pairs": sum(r.false_pairs for r in results),
+        "one_document_pct": _pct(sum(r.documents == 1 for r in results), n),
         "p50_ms": round(statistics.median(times), 1) if times else None,
         "p95_ms": round(times[int(0.95 * (len(times) - 1))], 1) if times else None,
     }
@@ -166,7 +263,9 @@ def bench_documents(
     cases, today = load_doc_cases(cases_dir)
     threshold = settings.auto_validate_threshold
     started = datetime.now(UTC)
-    results = [run_doc_case(c, cases_dir, engines, today, threshold) for c in cases]
+    analysed = [analyze_case(c, cases_dir, engines, today, threshold) for c in cases]
+    final, pairs = pair_all(analysed, today, threshold)
+    results = [score_case(a, final[a.case.case_id], pairs) for a in analysed]
     env = environment([*engines.mrz, *engines.viz], settings)
     env["engines_active"] = engines.names
     env["engines_missing"] = [n for n in ("vision", "tesseract", "ppocr") if n not in engines.names]
@@ -241,8 +340,9 @@ def markdown_docs(p: dict[str, Any], baseline: dict[str, Any] | None = None) -> 
         f"- Plate-forme : {env['platform']} · Python {env['python']}",
         f"- **Moteurs actifs : {', '.join(env['engines_active']) or 'aucun'}**"
         + (f" · absents : {', '.join(env['engines_missing'])}" if env["engines_missing"] else ""),
-        "- Spécimens UTO : motif SPECIMEN_DOCUMENT levé pour la mesure. Sans appariement"
-        " (phase 4), chaque champ prend la valeur du recadrage le plus confiant du cas.",
+        "- Spécimens UTO : motif SPECIMEN_DOCUMENT levé pour la mesure. Recto et verso"
+        " réunis par l'appariement réel (étape J) sur tout le jeu, fichiers dans l'ordre ;"
+        " une carte non appariée est jugée sur son document avec MRZ.",
     ]
     if baseline:
         out.append(f"- Comparaison : `{baseline['git']}` du {baseline['started_at'][:10]}")
@@ -252,14 +352,17 @@ def markdown_docs(p: dict[str, Any], baseline: dict[str, Any] | None = None) -> 
         ("**Champs obligatoires tous justes (%)**", "mandatory_all_correct_pct"),
         ("Noms accentués justes, accents compris (%)", "accented_names_correct_pct"),
         ("Noms justes sans tenir compte des accents (%)", "names_correct_no_accents_pct"),
+        ("Cartes : recto et verso appariés automatiquement (%)", "pairs_formed_pct"),
+        ("Un seul document par pièce (%)", "one_document_pct"),
         ("Automatisation (%)", "automation_pct"),
         ("**Précision de l'auto-validation (%)**", "auto_precision_pct"),
         ("Temps p50 par document (ms)", "p50_ms"),
         ("Temps p95 par document (ms)", "p95_ms"),
     ]
     for label, key in rows:
-        out.append(f"| {label} | {_fmt(s[key])}{_delta(s[key], b.get(key))} |")
+        out.append(f"| {label} | {_fmt(s.get(key))}{_delta(s.get(key), b.get(key))} |")
     out.append(f"| Erreurs auto-validées (doit être 0) | {len(s['silent_errors'])} |")
+    out.append(f"| Fausses paires automatiques (doit être 0) | {s.get('false_pairs', 0)} |")
     out += ["", "## Exactitude par champ", "", "| Champ | Juste (%) |", "|---|---|"]
     for k, v in p["field_accuracy_pct"].items():
         if v is not None:

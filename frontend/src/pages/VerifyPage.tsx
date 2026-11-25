@@ -91,6 +91,31 @@ export function VerifyPage() {
     onSuccess: () => setMessage("Document ajouté au jeu de test."),
     onError,
   });
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const afterPairing = (id: string | undefined) => {
+    setPickerOpen(false);
+    void queryClient.invalidateQueries({ queryKey: ["documents", batchId] });
+    if (id) navigate(`/documents/${id}`);
+  };
+  const pair = useMutation({
+    mutationFn: (otherId: string) => api.pairDocuments(documentId, otherId),
+    onSuccess: (doc) => afterPairing(doc.id),
+    onError,
+  });
+  const unpair = useMutation({
+    mutationFn: () => api.unpair(documentId),
+    onSuccess: (ids) => afterPairing(ids[0]),
+    onError,
+  });
+  // Autres documents d'une seule face du lot, chargés à l'ouverture du choix manuel.
+  const singles = useQuery({
+    queryKey: ["documents", batchId, "all"],
+    queryFn: () => api.listDocuments(batchId),
+    enabled: !!batchId && pickerOpen,
+  });
+  const pairCandidates = (singles.data ?? []).filter(
+    (r) => String(r.id) !== documentId && !(r.front_crop_id && r.back_crop_id),
+  );
 
   const d = doc.data;
   const crop = d ? (side === "front" ? d.front : d.back) : null;
@@ -116,6 +141,10 @@ export function VerifyPage() {
       setRotation((r) => (r + 90) % 360);
     } else if (!typing && (e.key === "v" || e.key === "V") && d?.front && d.back) {
       setSide((s) => (s === "front" ? "back" : "front"));
+    } else if (!typing && (e.key === "p" || e.key === "P") && d && !d.paired) {
+      // P : associer à la face suggérée, sinon ouvrir le choix de l'autre face.
+      if (d.suggestion) pair.mutate(d.suggestion.id);
+      else setPickerOpen(true);
     }
   };
 
@@ -143,7 +172,8 @@ export function VerifyPage() {
   if (!d) return null;
 
   const status = DOC_STATUS[d.status] ?? { label: d.status, tone: "neutral" as const };
-  const pending = validate.isPending || reject.isPending || remove.isPending || reprocess.isPending;
+  const pending =
+    validate.isPending || reject.isPending || remove.isPending || reprocess.isPending || pair.isPending || unpair.isPending;
   const remaining = (queue.data ?? []).filter((r) => String(r.id) !== d.id).length;
 
   return (
@@ -284,6 +314,26 @@ export function VerifyPage() {
             >
               Relancer l'analyse
             </button>
+            {d.paired ? (
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() => unpair.mutate()}
+                className="rounded-md border border-slate-300 px-3 py-2 hover:bg-slate-100"
+              >
+                Dissocier recto et verso
+              </button>
+            ) : (
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() => setPickerOpen((o) => !o)}
+                aria-expanded={pickerOpen}
+                className="rounded-md border border-slate-300 px-3 py-2 hover:bg-slate-100"
+              >
+                Associer à une autre face
+              </button>
+            )}
             {me?.role === "admin" && d.golden_enabled && (
               <button
                 type="button"
@@ -305,9 +355,62 @@ export function VerifyPage() {
               Supprimer le document
             </button>
           </div>
+          {!d.paired && d.suggestion && (
+            <div className="flex flex-wrap items-center gap-3 rounded-md bg-sky-50 p-3 text-sm text-sky-900">
+              {d.suggestion.crop_id && (
+                <img
+                  src={cropImageUrl(d.suggestion.crop_id)}
+                  alt="Autre face suggérée"
+                  className="h-16 w-auto rounded border border-sky-200"
+                />
+              )}
+              <span>
+                Autre face probable : {d.suggestion.file_name ?? "fichier du lot"}
+                {d.suggestion.score != null ? ` (score ${d.suggestion.score.toFixed(2)})` : ""}
+              </span>
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() => pair.mutate(d.suggestion!.id)}
+                className="rounded-md bg-sky-700 px-3 py-1.5 text-white hover:bg-sky-800"
+              >
+                Associer ces deux faces (P)
+              </button>
+            </div>
+          )}
+          {pickerOpen && !d.paired && (
+            <div className="space-y-2 rounded-md border border-slate-200 p-3 text-sm">
+              <p className="font-medium">Choisir l'autre face de ce document</p>
+              {singles.isLoading && <p className="text-slate-500">Chargement…</p>}
+              {singles.isSuccess && pairCandidates.length === 0 && (
+                <p className="text-slate-500">Aucun autre document d'une seule face dans ce lot.</p>
+              )}
+              <ul className="max-h-64 space-y-1 overflow-y-auto">
+                {pairCandidates.map((r) => (
+                  <li key={String(r.id)}>
+                    <button
+                      type="button"
+                      disabled={pending}
+                      onClick={() => pair.mutate(String(r.id))}
+                      className="flex w-full items-center gap-3 rounded px-2 py-1 text-left hover:bg-slate-100"
+                    >
+                      {typeof r.preview_crop_id === "string" && (
+                        <img src={cropImageUrl(r.preview_crop_id)} alt="" className="h-10 w-auto rounded" />
+                      )}
+                      <span>
+                        {String(r.source_file ?? "Fichier")}
+                        {typeof r.page_index === "number" ? `, page ${r.page_index + 1}` : ""}
+                        {r.surname ? ` · ${String(r.surname)}` : ""}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           <p className="text-xs text-slate-500">
             Tab / Maj+Tab : champ suivant ou précédent · ↑ / ↓ : alternative · Échap : annuler la saisie du champ ·
-            Entrée : valider et passer au suivant · R : rotation · V : recto/verso
+            Entrée : valider et passer au suivant · R : rotation · V : recto/verso · P : associer recto/verso
           </p>
         </section>
       </div>

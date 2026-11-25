@@ -219,6 +219,10 @@ class Document(Base):
     duplicate_of_id: Mapped[str | None] = mapped_column(
         ForeignKey("documents.id", ondelete="SET NULL")
     )
+    # Association recto/verso suggérée (score < seuil automatique ou concurrent proche, étape J).
+    # Pas de clé étrangère : ajoutée par ALTER TABLE sous SQLite ; nettoyée par l'appariement.
+    suggested_pair_id: Mapped[str | None] = mapped_column(String(36))
+    pair_score: Mapped[float | None] = mapped_column(Float)
     reviewed_by: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
     reviewed_at: Mapped[datetime | None]
     created_at: Mapped[datetime] = mapped_column(default=utcnow)

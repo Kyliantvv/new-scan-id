@@ -17,6 +17,7 @@ export function DocumentsSection({ batchId, rows }: { batchId: string; rows: Doc
   const [scope, setScope] = useState<Scope>("batch");
   const [withStatus, setWithStatus] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
 
   const toReview = rows.filter((r) => r.status === "to_review");
   const shown = onlyReview ? toReview : rows;
@@ -34,6 +35,16 @@ export function DocumentsSection({ batchId, rows }: { batchId: string; rows: Doc
     },
     [batchId, queryClient],
   );
+
+  const onPair = async () => {
+    setError(null);
+    try {
+      await api.runPairing(batchId);
+      setInfo("Appariement recto/verso lancé : le tableau se mettra à jour à la fin.");
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "L'appariement n'a pas pu être lancé.");
+    }
+  };
 
   const onExport = async (format: "xlsx" | "csv") => {
     setError(null);
@@ -83,6 +94,13 @@ export function DocumentsSection({ batchId, rows }: { batchId: string; rows: Doc
           >
             Vérifier les documents
           </button>
+          <button
+            type="button"
+            onClick={() => void onPair()}
+            className="rounded-md border border-slate-300 px-3 py-1.5 hover:bg-slate-100"
+          >
+            Lancer l'appariement
+          </button>
           <span className="mx-1 h-6 w-px bg-slate-200" />
           <label className="flex items-center gap-1">
             Exporter
@@ -119,6 +137,11 @@ export function DocumentsSection({ batchId, rows }: { batchId: string; rows: Doc
       {error && (
         <p role="alert" className="text-sm text-red-700">
           {error}
+        </p>
+      )}
+      {info && !error && (
+        <p role="status" className="text-sm text-slate-600">
+          {info}
         </p>
       )}
       <DocumentsGrid rows={shown} onEdit={onEdit} onReady={setGrid} />
