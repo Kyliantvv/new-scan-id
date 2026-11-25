@@ -23,17 +23,36 @@
 
 Conséquences : le helper Swift `idvision` ne peut être ni compilé ni lancé ici. Le backend Python et le front peuvent être développés et testés ; tout ce qui touche à Apple Vision doit être validé sur un Mac.
 
-## Mac mini M1 (à relever sur place)
+## Mac de développement macOS (relevé du 2026-11-25)
+
+> Ce Mac est un **Mac de développement**, pas le Mac mini de production : le relevé de production reste à faire sur le Mac mini (FileVault, VM Lima, IDR_HOST…).
 
 | Élément | Valeur | Commande |
 |---|---|---|
-| Version de macOS | à relever | `sw_vers` |
-| Mémoire vive (8 ou 16 Go) | à relever | `sysctl hw.memsize` |
-| Puce | à relever | `sysctl -n machdep.cpu.brand_string` |
-| Espace disque libre | à relever | `df -h /` |
-| Ressources de la VM Lima de préprod | à relever | `limactl list` |
-| Xcode Command Line Tools | à relever | `swift --version` |
-| Homebrew, tesseract, uv, node/pnpm, caddy | à relever | `brew --version; tesseract --version; uv --version; node --version; pnpm --version; caddy version` |
+| Version de macOS | 27.2.1 (build 26B131) | `sw_vers` |
+| Mémoire vive | 16 Go (17 179 869 184 octets) | `sysctl hw.memsize` |
+| Puce | Apple M1, 8 cœurs | `sysctl -n machdep.cpu.brand_string hw.ncpu` |
+| Espace disque libre | 168 Go libres sur 460 Go | `df -h /` |
+| VM Lima de préprod | aucune : `limactl` et `colima` absents, aucun processus Lima/QEMU. La CLI `docker` existe (`~/.docker/bin/docker`), non touchée. | `limactl list` |
+| FileVault | **désactivé** (OK pour spécimens, à activer avant toute vraie pièce) | `fdesetup status` |
+| Xcode Command Line Tools / Swift | CLT seules (pas d'Xcode.app) ; Apple Swift 6.4.2 | `swift --version` |
+| Homebrew | 7.0.15 | `brew --version` |
+| Tesseract | 5.5.4 (Homebrew) | `tesseract --version` |
+| uv | 0.13.6 | `uv --version` |
+| Node / pnpm | v24.21.0 / 12.23.0 (corepack) | `node --version; pnpm --version` |
+| Caddy | installé par Homebrew le 2026-11-25 (non lancé, pas de service) | `caddy version` |
+
+Particularité des CLT sans Xcode : `swift test` doit recevoir le plugin de macros de Swift Testing (voir `docs/DECISIONS.md`) :
+
+```bash
+swift test --package-path vision-helper -Xswiftc -plugin-path -Xswiftc /Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing
+```
+
+## Mac mini M1 de production (à relever sur place)
+
+| Élément | Valeur |
+|---|---|
+| macOS, RAM (8 ou 16 Go), disque, VM Lima de préprod, FileVault | à relever (`sw_vers`, `sysctl hw.memsize`, `df -h /`, `limactl list`, `fdesetup status`) |
 
 Installation des manquants sur le Mac (pas de sudo pour Homebrew une fois installé) :
 

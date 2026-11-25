@@ -121,3 +121,15 @@ def test_missing_binary(tmp_path: Path) -> None:
 
 def test_probe_helper_absent(settings) -> None:
     assert probe_helper(settings) is None
+
+
+def test_numpy_image_creates_missing_tmp_dir(make_client, tmp_path: Path) -> None:
+    """Un dossier temporaire absent (installation neuve) est créé, pas une erreur."""
+    import numpy as np
+
+    tmp = tmp_path / "data" / "tmp"
+    engine = AppleVisionEngine(make_client(), tmp_dir=tmp)
+    lines = engine.recognize(np.zeros((20, 40), dtype=np.uint8))
+    assert len(lines) == 1
+    assert tmp.is_dir()
+    assert list(tmp.iterdir()) == []  # PNG temporaire supprimé

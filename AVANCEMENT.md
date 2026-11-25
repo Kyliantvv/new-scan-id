@@ -1,13 +1,13 @@
 # Avancement du projet IDReader
 
-> Mis à jour à chaque étape. Dernière mise à jour : 2026-11-25.
+> Mis à jour à chaque étape. Dernière mise à jour : 2026-11-25 (premier lancement sur macOS).
 > Développement hybride : tout ce qui ne dépend ni d'Apple Vision ni de vraies pièces se fait sous Windows ; le reste attend le Mac mini.
 
 ## Où on en est
 
 | Phase | État | Commentaire |
 |---|---|---|
-| 0 — Socle | fait sous Windows, à valider sur macOS | Helper Swift `idvision` écrit sans compilateur : à compiler et tester sur le Mac (liste dans `docs/DECISIONS.md`). |
+| 0 — Socle | **validé sur macOS (2026-11-25)** | Helper Swift compilé, 9/9 tests Swift, `doctor` OK, 264 tests Python, front OK. Reste : parcours Safari/Chrome (manuel). |
 | 1a — MRZ sans Vision + banc synthétique | fait | Les trois critères sont atteints (2026-11-25). |
 | 1b — Vision, calibration, banc golden | à faire (Mac) | Demande macOS et de vraies pièces. |
 | 2 — Zone visuelle (G, H, L) | fait sous Windows, à valider sur macOS | G (PP-OCRv6 medium det + rec, fusion), H (MRZ guidée, libellés, dates multilingues), L (confiance, statuts, raisons, alertes), documents UTO synthétiques, worker branché, `idreader analyze`, banc `documents`. Critères chiffrés : à mesurer avec Vision (deux moteurs) et sur vraies pièces. |
@@ -21,11 +21,13 @@
 
 | Banc | Date | Commit | Moteurs actifs | Résultat | Représentatif |
 |---|---|---|---|---|---|
+| synthétique (MRZ), 300 cas, graine 2026 | 2026-11-25 | `f453f2d` + correctif | vision, tesseract, ppocr | MRZ entièrement correcte **81,7 %** (Windows : 80,0) · sommes valides 92,0 % (92,7) · 0 erreur auto-validée · auto-validation 0 % · p50 2,2 s (0,23 s), p95 3,7 s | **oui** (Mac, trois moteurs) ; non calibré |
+| documents UTO (A→L, appariement réel), 60 documents | 2026-11-25 | `f453f2d` + correctif | vision, tesseract, ppocr | détection 100 % · champs obligatoires tous justes **40,0 %** (30,0) · cartes appariées 81,2 % (84,4) · un seul document par pièce 90,0 % (91,7) · **0 fausse paire** · **0 erreur auto-validée** · noms justes sans accents 75,0 % (73,3), avec accents 51,6 % (38,5) · auto-validation 0 % · p50 12,5 s (3,8), p95 19,8 s (5,0) | **oui** (Mac, trois moteurs) ; non calibré |
 | synthétique (MRZ), 300 cas, graine 2026 | 2026-11-25 | `7859b22` | ppocr | MRZ entièrement correcte 80,0 % · sommes valides 92,7 % · 0 erreur auto-validée · p50 225 ms | **non** (Windows, sans Vision ni Tesseract) |
 | documents UTO (A→L, appariement réel), 60 documents, graine 2026 | 2026-11-25 | `910e0c9` | ppocr | détection 100 % · champs obligatoires tous justes 30,0 % · cartes appariées automatiquement 84,4 % · un seul document par pièce 91,7 % · **0 fausse paire** · **0 erreur auto-validée** · noms justes 73,3 % sans accents · p50 3,8 s, p95 5,0 s | **non** |
 | documents UTO (A→L, appariement idéal), 60 documents | 2026-11-25 | `c46c8b2` | ppocr | détection 100 % · champs obligatoires tous justes 30,0 % · noms justes 71,7 % sans accents, 38,5 % avec · auto-validation 0 % (un seul moteur) · **0 erreur auto-validée** · p50 3,8 s par document | **non** |
 
-Rapports : `bench/results/2026-11-24_7859b22_synthetic.md`, `bench/results/2026-11-25_910e0c9_documents.md` (date UTC dans le nom). Ces chiffres servent de référence pour suivre le code ; aucun poids ni seuil n'est calibré dessus.
+Rapports : `bench/results/2026-11-25_f453f2d-dirty_synthetic.md`, `bench/results/2026-11-25_f453f2d-dirty_documents.md` (Mac, correctif Vision non encore commité au moment du banc, d'où « dirty »), `bench/results/2026-11-24_7859b22_synthetic.md`, `bench/results/2026-11-25_910e0c9_documents.md` (date UTC dans le nom). Ces chiffres servent de référence pour suivre le code ; aucun poids ni seuil n'est calibré dessus.
 
 ## Lecture des résultats de la phase 2 (non représentatifs)
 
@@ -37,7 +39,6 @@ Rapports : `bench/results/2026-11-24_7859b22_synthetic.md`, `bench/results/2026-
 
 | Point | Raison | Débloqué par |
 |---|---|---|
-| Helper Swift `idvision` (compilation, tests, `doctor`) | Swift et Vision n'existent que sur macOS | Mac mini |
 | Apple Vision dans le pipeline (MRZ, zone visuelle, détection, orientation, codes-barres) | idem | Mac mini, phase 1b |
 | Calibration des poids du vote, des seuils de qualité et de confiance | Interdite sous Windows : banc non représentatif | Banc complet sur le Mac + golden |
 | Banc `golden` et critères chiffrés sur vraies pièces | Aucune vraie pièce sur ce PC (règle du projet) | Mac mini, disque chiffré |
@@ -125,3 +126,12 @@ Les rapports doivent indiquer « Moteurs actifs : vision, tesseract, ppocr » et
 Message à donner à Claude Code, ouvert dans le dépôt sur le Mac :
 
 > Lis `CLAUDE.md`, `AVANCEMENT.md`, puis `docs/07_ROADMAP.md` (phase 1b) et les sections de `docs/03_PIPELINE_ANALYSE.md` qu'elle concerne. On est sur le Mac mini. Commence par la liste « À vérifier au premier lancement sur macOS » de `docs/DECISIONS.md` : compile le helper, fais passer ses tests, corrige ce qui échoue et coche la liste. Ensuite, propose un plan découpé en étapes vérifiables pour la phase 1b (intégration de Vision, calibration des poids du vote, banc synthétique complet, premier banc golden). Écris les tests avec le code. Un commit par étape, poussé aussitôt. Mets à jour `AVANCEMENT.md` à chaque étape. À la fin, donne-moi les critères d'acceptation avec leur état et les chiffres.
+
+## Premier lancement sur macOS (2026-11-25, Mac de développement)
+
+Machine : macOS 27.2.1, M1, 16 Go, 168 Go libres, pas de VM Lima (`deploy/MACHINE.md`). FileVault désactivé. Vision : 33 langues « accurate » (latin, chinois, japonais, coréen, russe, ukrainien, thaï, vietnamien, arabe, hindi, marathi…), 6 « fast » ; `RecognizeTextRequest` révision 3 ; `RecognizeDocumentsRequest` disponible.
+
+- Auto-validation toujours à 0 % avec trois moteurs : 108 des 245 MRZ exactes du banc synthétique n'ont aucun motif. Les champs non couverts par une somme (noms, sexe, nationalité) restent sous le seuil 0,95 ; à traiter par la calibration (phase 1b), sans toucher aux seuils avant.
+- Temps : p50 par document ×3,3 (3,8 → 12,5 s) : trois moteurs de zone visuelle au lieu d'un seul.
+- Qualité « poor » : 5 % de documents entièrement justes.
+- Le banc doit signaler un moteur actif dont toutes les lectures échouent (bug `data/tmp/` passé inaperçu).

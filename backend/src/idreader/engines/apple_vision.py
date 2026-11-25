@@ -269,6 +269,9 @@ class AppleVisionEngine:
             return parse_lines(response, self.name)
         import cv2  # import local : le client du helper n'en a pas besoin
 
+        if self.tmp_dir is not None:
+            # Le dossier n'existe pas sur une installation neuve (constaté sur macOS).
+            self.tmp_dir.mkdir(parents=True, exist_ok=True)
         with tempfile.TemporaryDirectory(dir=self.tmp_dir) as tmp:
             path = Path(tmp) / "image.png"
             bgr = image if image.ndim == 2 else cv2.cvtColor(image, cv2.COLOR_RGB2BGR)

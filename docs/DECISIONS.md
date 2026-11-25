@@ -24,6 +24,10 @@ Une ligne par décision. Les documents concernés sont mis à jour en même temp
 | 2026-11-24 | Phase 1 découpée : 1a sous Windows (E.3–E.7, A, B, C en OpenCV, Tesseract, PP-OCR, `gen_mrz.py`, banc synthétique), 1b sur macOS (Vision, calibration, banc complet et golden). | Le Mac mini n'est pas encore disponible ; avancer sur tout ce qui ne dépend pas d'Apple Vision. |
 | 2026-11-24 | Exception : sous Windows, téléchargement autorisé de `mrz.traineddata` et des seuls modèles PP-OCR utiles à la MRZ, via `fetch_models.py --pin`, empreintes montrées avant commit. Aucun modèle d'IA générative. | Nécessaire pour tester Tesseract et PP-OCR ; quelques dizaines de Mo. |
 | 2026-11-24 | Banc sous Windows sans Vision : chiffre de référence, pas d'objectif ; aucun poids ni seuil définitif calibré dessus. | Résultats non représentatifs du Mac mini (moteur n° 1 absent). |
+| 2026-11-25 | Premier lancement sur macOS 27.2.1 (Mac de développement, M1, 16 Go, CLT sans Xcode) : le helper Swift compile sans erreur ni avertissement de code (seuls avertissements : chemins de recherche du linker propres aux CLT). `swift test` exige `-Xswiftc -plugin-path -Xswiftc /Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing` (plugin de macros Swift Testing non trouvé sans Xcode) ; avec lui, 9 tests sur 9 passent. | Particularité des Command Line Tools : à reprendre sur le Mac mini s'il n'a pas Xcode. |
+| 2026-11-25 | `AppleVisionEngine` crée `data/tmp/` s'il manque. Bug trouvé par le banc : sur une installation neuve, les 900 lectures Vision du banc synthétique échouaient en `FileNotFoundError` (journalisé seulement par code), sans que le banc le signale. Test ajouté. | Le banc a tourné sans Vision en le disant seulement dans les journaux : à rendre visible (voir AVANCEMENT, phase 1b). |
+| 2026-11-25 | `fetch_models.py` : le miroir CTAN pinné (`ctan.math.utah.edu`) envoie une chaîne de certificats incomplète, refusée par `urllib` (`CERTIFICATE_VERIFY_FAILED`). Contournement : `curl`, puis vérification de l'empreinte SHA-256 épinglée (identique à celle de Windows). La vérification TLS n'a pas été désactivée. | À régler : autre miroir CTAN ou chaîne complète. |
+| 2026-11-25 | Première utilisation de Vision sur la machine : la première lecture peut dépasser le délai de 60 s du client (un test de la suite a expiré, puis tout est passé au second lancement). À traiter en phase 1b par une lecture d'échauffement au démarrage du worker. | Constaté une fois ; non reproduit à chaud. |
 
 ## Choix non couverts par les docs (option la plus simple)
 
@@ -92,47 +96,47 @@ Une ligne par décision. Les documents concernés sont mis à jour en même temp
 
 À valider d'un coup sur le Mac, avant d'attaquer la phase 1.
 
-- [ ] Relevé de la machine dans `deploy/MACHINE.md` (`sw_vers`, `sysctl hw.memsize`, puce, disque, VM Lima).
+- [x] Relevé de la machine dans `deploy/MACHINE.md` — fait 2026-11-25 (macOS 27.2.1, 16 Go, M1, pas de Lima) (`sw_vers`, `sysctl hw.memsize`, puce, disque, VM Lima).
 
 ### Outils
 
-- [ ] Installer les outils (`deploy/MACHINE.md` § Installation) : Xcode Command Line Tools (Swift 6), Homebrew, `uv`, Node + pnpm (corepack), Tesseract, Caddy.
-- [ ] `uv sync` dans `backend/` avec le Python 3.12 géré par uv (la config Windows `python-preference = "only-system"` et `no-binary-package = ["mypy"]` ne doit pas être reprise sur le Mac).
-- [ ] `pytest.exe`/`mypy` lancés directement (`uv run pytest`, `uv run mypy src`) comme dans `CLAUDE.md`.
+- [x] Installer les outils (`deploy/MACHINE.md` § Installation) : Xcode Command Line Tools (Swift 6), Homebrew, `uv`, Node + pnpm (corepack), Tesseract, Caddy. — **OK** : Homebrew, tesseract 5.5.4, uv, node, caddy (installé le 2026-11-25) ; pnpm 12.23 via corepack ; CLT sans Xcode
+- [x] `uv sync` dans `backend/` avec le Python 3.12 géré par uv (la config Windows `python-preference = "only-system"` et `no-binary-package = ["mypy"]` ne doit pas être reprise sur le Mac). — **OK** : Python 3.12.14 géré par uv
+- [x] `pytest.exe`/`mypy` lancés directement (`uv run pytest`, `uv run mypy src`) comme dans `CLAUDE.md`. — **OK**
 
 ### Helper Swift `idvision` (écrit sans compilateur sous Windows)
 
-- [ ] `swift build -c release --package-path vision-helper` compile sans avertissement en mode Swift 6 (concurrence stricte).
-- [ ] `swift test --package-path vision-helper` : tests `GeometryTests` et `DispatcherTests` (Swift Testing) passent.
-- [ ] Noms d'API de `RecognizeTextRequest` (macOS 15, framework Vision « Swift ») utilisés dans `AppleVisionBackend.swift`, à confirmer : `recognitionLevel`, `recognitionLanguages`, `usesLanguageCorrection`, `minimumTextHeightFraction`, `supportedRecognitionLanguages`, `revision`, `perform(on: CGImage)`, `observation.topCandidates(_:)`, `boundingBox`/`topLeft`…`bottomRight` en `NormalizedPoint` avec `.x`/`.y`.
-- [ ] Format des identifiants de langue renvoyés par `supportedRecognitionLanguages` (`fr-FR`, `zh-Hans`…) : le helper reconstruit `languageCode-script-region` ; vérifier que la liste de `idvision languages` est lisible et qu'une langue de cette liste est acceptée en entrée.
-- [ ] `String(describing: request.revision)` donne une valeur exploitable pour `recognize_text_revision` (sinon, choisir un autre champ).
-- [ ] Détection `#available(macOS 26, *)` pour `recognize_documents_available` : compile sur le SDK installé.
-- [ ] `JSONEncoder` : l'enveloppe aplatit bien la charge utile avec `id`, `ok`, `ms` (sortie d'une ligne par réponse, clés en snake_case).
-- [ ] ROI découpée par `CGImage.cropping(to:)` en pixels, origine en haut à gauche ; coordonnées renvoyées dans le repère de l'image entière (décalage ajouté).
-- [ ] `vision-helper/.build/release/idvision doctor` affiche la version de macOS, la révision de `RecognizeTextRequest` et les langues (critère d'acceptation de la phase 0).
-- [ ] `idvision serve` : une requête invalide renvoie une erreur JSON sans quitter ; stdin fermé = sortie propre ; rien d'autre que des identifiants et codes sur stderr.
-- [ ] `uv run pytest tests/unit/test_apple_vision_real.py` (passé à « skipped » sous Windows) : texte synthétique « IDREADER 2468 » retrouvé à ± 25 px, ROI respectée, `doctor` lu par le client Python.
-- [ ] Le worker journalise au démarrage la version du helper et le nombre de langues (`_log_helper_status`).
+- [x] `swift build -c release --package-path vision-helper` compile sans avertissement en mode Swift 6 (concurrence stricte). — **OK** : 47 s, aucun avertissement de code
+- [x] `swift test --package-path vision-helper` : tests `GeometryTests` et `DispatcherTests` (Swift Testing) passent. — **OK** : 9/9 avec `-Xswiftc -plugin-path …` (voir décision du 2026-11-25)
+- [x] Noms d'API de `RecognizeTextRequest` (macOS 15, framework Vision « Swift ») utilisés dans `AppleVisionBackend.swift`, à confirmer : `recognitionLevel`, `recognitionLanguages`, `usesLanguageCorrection`, `minimumTextHeightFraction`, `supportedRecognitionLanguages`, `revision`, `perform(on: CGImage)`, `observation.topCandidates(_:)`, `boundingBox`/`topLeft`…`bottomRight` en `NormalizedPoint` avec `.x`/`.y`. — **OK** : compile : les noms d'API sont bons
+- [ ] Format des identifiants de langue renvoyés par `supportedRecognitionLanguages` (`fr-FR`, `zh-Hans`…) : le helper reconstruit `languageCode-script-region` ; vérifier que la liste de `idvision languages` est lisible et qu'une langue de cette liste est acceptée en entrée. **Reste** : une langue de la liste (`fr-Latn-FR`) acceptée en entrée non testée (les tests utilisent `en-US`).
+- [x] `String(describing: request.revision)` donne une valeur exploitable pour `recognize_text_revision` (sinon, choisir un autre champ). — **OK** : `revision3`
+- [x] Détection `#available(macOS 26, *)` pour `recognize_documents_available` : compile sur le SDK installé. — **OK** : `recognize_documents_available: true`
+- [x] `JSONEncoder` : l'enveloppe aplatit bien la charge utile avec `id`, `ok`, `ms` (sortie d'une ligne par réponse, clés en snake_case). — **OK**
+- [x] ROI découpée par `CGImage.cropping(to:)` en pixels, origine en haut à gauche ; coordonnées renvoyées dans le repère de l'image entière (décalage ajouté). — **OK** : couvert par `test_apple_vision_real.py`
+- [x] `vision-helper/.build/release/idvision doctor` affiche la version de macOS, la révision de `RecognizeTextRequest` et les langues (critère d'acceptation de la phase 0). — **OK** : 33 langues « accurate », 6 « fast »
+- [x] `idvision serve` : une requête invalide renvoie une erreur JSON sans quitter ; stdin fermé = sortie propre ; rien d'autre que des identifiants et codes sur stderr. — **OK** : BAD_REQUEST / UNKNOWN_OP sans quitter, sortie propre à la fermeture de stdin, stderr = identifiants et codes
+- [x] `uv run pytest tests/unit/test_apple_vision_real.py` (passé à « skipped » sous Windows) : texte synthétique « IDREADER 2468 » retrouvé à ± 25 px, ROI respectée, `doctor` lu par le client Python. — **OK** : 3/3
+- [x] Le worker journalise au démarrage la version du helper et le nombre de langues (`_log_helper_status`). — **OK** : `idvision ok version=0.1.0 macos=27.2.1 revision=revision3 languages_accurate=33`
 
 ### Backend et front
 
-- [ ] Suite complète `uv run pytest` sur macOS, dont `test_worker_kill.py` (SIGKILL réel du worker puis reprise).
-- [ ] `ImageFont.load_default(size=…)` de Pillow fonctionne (police intégrée, sans fichier système).
-- [ ] `pnpm --dir frontend install && pnpm --dir frontend build && pnpm --dir frontend test`.
+- [x] Suite complète `uv run pytest` sur macOS, dont `test_worker_kill.py` (SIGKILL réel du worker puis reprise). — **OK** : 264 passés, `test_worker_kill.py` compris
+- [x] `ImageFont.load_default(size=…)` de Pillow fonctionne (police intégrée, sans fichier système). — **OK**
+- [x] `pnpm --dir frontend install && pnpm --dir frontend build && pnpm --dir frontend test`. — **OK** : build 366 ms, 8 tests Vitest
 - [ ] Parcours dans Safari et Chrome : connexion, création de lot, dépôt de plusieurs fichiers, progression en direct, tableau vide en français (non fait sous Windows : le navigateur piloté n'a pas pu être connecté ; vérifié seulement par curl et les tests).
 - [ ] Onglet réseau du navigateur : aucune requête hors de l'origine (pas de Google Fonts, pas de CDN).
 
 ### Plus tard (phase 1 et déploiement)
 
 - [ ] Vision dans un LaunchAgent (session utilisateur) : le helper fonctionne lancé par launchd, pas seulement depuis le Terminal.
-- [ ] `brew install tesseract`, puis `uv run idreader bench --set synthetic` avec les trois moteurs (premier banc représentatif).
-- [ ] `uv run python ../scripts/fetch_models.py --verify` sur le Mac mini (mêmes empreintes que sous Windows).
-- [ ] `AppleVisionEngine` avec un tableau NumPy : PNG temporaire écrit dans `data/tmp/` puis supprimé.
-- [ ] FileVault actif (`fdesetup status`) avant tout dépôt de vraie pièce.
+- [x] `brew install tesseract`, puis `uv run idreader bench --set synthetic` avec les trois moteurs (premier banc représentatif). — **OK** : synthétique 300 cas et documents 60, trois moteurs (voir AVANCEMENT)
+- [x] `uv run python ../scripts/fetch_models.py --verify` sur le Mac mini (mêmes empreintes que sous Windows). — **OK** : 9 fichiers « ok » (OCR-B via `curl`, empreinte identique)
+- [x] `AppleVisionEngine` avec un tableau NumPy : PNG temporaire écrit dans `data/tmp/` puis supprimé. — **OK** : corrigé : `data/tmp/` absent (voir décisions)
+- [ ] FileVault actif (`fdesetup status`) avant tout dépôt de vraie pièce. **KO** : FileVault est désactivé sur ce Mac de développement ; sans importance pour les spécimens.
 - [ ] Phase 3, parcours au clavier dans Safari et Chrome : ouvrir un document « À vérifier », corriger un champ (↑/↓ pour une alternative), valider avec Entrée et arriver sur le suivant ; mesurer le temps (objectif < 15 s par document typique).
 - [ ] Export XLSX ouvert dans Excel (macOS) : dates reconnues comme dates, en-tête figé, filtre ; export CSV ouvert d'un double-clic dans Excel en français (accents, colonnes séparées).
-- [ ] Banc `documents` avec Vision + PP-OCR : les noms lus à l'identique par les deux moteurs passent en `ok` (règle des accents), sans erreur auto-validée.
+- [ ] Banc `documents` avec Vision + PP-OCR : les noms lus à l'identique par les deux moteurs passent en `ok` (règle des accents), sans erreur auto-validée. **Partiel** : accents corrects 38,5 → 51,6 %, mais 24 motifs `VIZ_ACCENTS_UNCONFIRMED` restent ; à analyser en phase 1b.
 - [ ] Phase 4 : lot mélangé de vraies cartes (recto et verso en fichiers séparés, puis sur une même page) : taux d'appariement automatique, aucune fausse paire ; touche P et « Dissocier » dans Safari.
 - [ ] Phase 5 : `deploy/install.sh` sur le Mac mini (compte `idreader`) ; Caddy écoute sur 443 sans root ; la CSP ne bloque rien (console du navigateur) ; `fdesetup authrestart` puis retour seul des trois services ; lot de 300 documents sans intervention (p95 noté) ; aucun appel sortant pendant un banc complet (Little Snitch ou `nettop`).
 - [ ] Phase 5 : `fr.idreader.purge` et `fr.idreader.backup` se déclenchent à l'heure (`launchctl print`), y compris après une mise en veille ; `deploy/backup.sh --init` puis une sauvegarde et une restauration complètes selon `deploy/BACKUP.md` ; `stat -f '%Lp'` fonctionne sur la config ; l'alerte macOS apparaît après une mise à jour de macOS et disparaît après un banc.
