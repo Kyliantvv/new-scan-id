@@ -468,12 +468,23 @@ def _file_ids(db: Session, doc: m.Document) -> list[str]:
 
 
 @router.post("/documents/{document_id}/reprocess", status_code=202)
-def reprocess_document(document_id: str, auth: AuthDep, db: DbDep) -> Response:
+def reprocess_document(
+    document_id: str, auth: AuthDep, db: DbDep, settings: SettingsDep
+) -> Response:
     """Relance l'analyse des fichiers du document (leurs documents sont remplacés)."""
     doc = get_document(db, document_id)
     files = _file_ids(db, doc)
     if not files:
         raise api_error(409, "NO_SOURCE_FILE", "Aucun fichier source pour ce document.")
+    for file_id in files:
+        f = db.get(m.File, file_id)
+        if f is None or not (settings.data_dir / f.storage_path).is_file():
+            raise api_error(
+                409,
+                "IMAGES_PURGED",
+                "Les images de ce document ont été purgées (durée de conservation) : "
+                "l'analyse ne peut pas être relancée.",
+            )
     for file_id in files:
         enqueue(db, m.JobType.PROCESS_FILE, ref_id=file_id, batch_id=doc.batch_id, priority=1)
     doc.status = m.DocumentStatus.PROCESSING

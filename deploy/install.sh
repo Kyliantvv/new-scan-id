@@ -25,7 +25,8 @@ REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DATA_DIR="${IDR_DATA_DIR:-$HOME/idreader-data}"
 LOG_DIR="$HOME/Library/Logs/idreader"
 AGENTS_DIR="$HOME/Library/LaunchAgents"
-SERVICES=(api worker caddy)
+SERVICES=(api worker caddy purge)  # backup ajouté si ~/.config/idreader/backup.env existe
+BACKUP_CONFIG="$HOME/.config/idreader/backup.env"
 MIN_MACOS_MAJOR=15
 MIN_FREE_GB=20
 
@@ -69,6 +70,11 @@ if (( ${#missing[@]} )); then
   die "installer les outils manquants puis relancer."
 fi
 
+if command -v restic >/dev/null 2>&1; then
+  info "restic : $(command -v restic)"
+else
+  warn "restic absent (sauvegardes) : brew install restic"
+fi
 if fdesetup status 2>/dev/null | grep -q "On"; then
   info "FileVault : actif"
 else
@@ -164,6 +170,11 @@ fi
 bold "9. Services launchd (LaunchAgents de la session $(id -un))"
 mkdir -p "$AGENTS_DIR"
 domain="gui/$(id -u)"
+if [[ -f "$BACKUP_CONFIG" ]]; then
+  SERVICES+=(backup)
+else
+  warn "sauvegarde non programmée : créer $BACKUP_CONFIG (deploy/BACKUP.md) puis relancer."
+fi
 UV_BIN="$(command -v uv)"
 CADDY_BIN="$(command -v caddy)"
 IDR_HOST="$IDR_HOST" IDR_LAN_CIDR="$IDR_LAN_CIDR" \

@@ -69,6 +69,63 @@ def create_user_cmd(
 
 
 @app.command()
+def purge(
+    dry_run: Annotated[bool, typer.Option("--dry-run", help="Compter sans rien supprimer")] = False,
+    batch: Annotated[
+        str | None, typer.Option("--batch", help="Purger ce lot entier (identifiant)")
+    ] = None,
+    show_retention: Annotated[
+        bool,
+        typer.Option(
+            "--show-retention", help="Afficher « images_jours données_jours » (sauvegarde)"
+        ),
+    ] = False,
+) -> None:
+    """Purge selon la durée de conservation (lancée chaque jour par launchd)."""
+    from idreader.core import app_settings
+    from idreader.core.db import make_engine, make_session_factory
+    from idreader.core.purge import BatchBusyError, purge_batch, purge_expired, vacuum
+
+    setup_logging()
+    settings = get_settings()
+    _require_schema(settings)
+    engine = make_engine(settings)
+    try:
+        with make_session_factory(engine, immediate=True)() as db:
+            conf = app_settings.load(db, settings)
+            if show_retention:
+                typer.echo(f"{conf.retention_images_days} {conf.retention_data_days}")
+                return
+            if batch:
+                try:
+                    found = purge_batch(db, settings, batch, user_id=None, dry_run=dry_run)
+                except BatchBusyError:
+                    typer.echo("Lot en cours d'analyse : réessayer plus tard.", err=True)
+                    raise typer.Exit(1) from None
+                if not found:
+                    typer.echo("Lot introuvable.", err=True)
+                    raise typer.Exit(1)
+                db.commit()
+                typer.echo("Lot purgé." if not dry_run else "Lot à purger (simulation).")
+                deleted = not dry_run
+            else:
+                report = purge_expired(
+                    db,
+                    settings,
+                    images_days=conf.retention_images_days,
+                    data_days=conf.retention_data_days,
+                    dry_run=dry_run,
+                )
+                db.commit()
+                typer.echo(json.dumps(report.model_dump(), indent=1))
+                deleted = report.rows_deleted
+        if deleted:
+            vacuum(engine)
+    finally:
+        engine.dispose()
+
+
+@app.command()
 def serve() -> None:
     """Lance l'API (par défaut sur 127.0.0.1:8000, voir IDR_BIND)."""
     import uvicorn

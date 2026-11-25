@@ -55,6 +55,8 @@ corepack enable                             # pnpm
 | API (127.0.0.1:8000) | `fr.idreader.api` | `~/Library/Logs/idreader/api.log`, `api.err.log` |
 | Worker (+ `idvision serve`) | `fr.idreader.worker` | `~/Library/Logs/idreader/worker.log`, `worker.err.log` |
 | Caddy (HTTPS, sous-réseau) | `fr.idreader.caddy` | `~/Library/Logs/idreader/caddy.log`, `caddy.err.log` |
+| Purge (chaque jour, 2 h 00) | `fr.idreader.purge` | `~/Library/Logs/idreader/purge.log`, `purge.err.log` |
+| Sauvegarde restic (chaque jour, 2 h 30) | `fr.idreader.backup` | `~/Library/Logs/idreader/backup.log`, `backup.err.log` |
 
 ```bash
 launchctl print gui/$(id -u)/fr.idreader.worker | head -20      # état

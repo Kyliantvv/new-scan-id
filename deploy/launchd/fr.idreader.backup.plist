@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  LaunchAgent : sauvegarde restic nocturne (deploy/backup.sh), après la purge.
+  Chaque jour à 02:30 (si le Mac dormait, launchd le lance au réveil).
+  Modèle : deploy/install.sh remplace __REPO__, __HOME__ et __UV__ puis copie le fichier dans
+  ~/Library/LaunchAgents/.
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>fr.idreader.backup</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>__REPO__/deploy/backup.sh</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>__REPO__</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    <key>HOME</key>
+    <string>__HOME__</string>
+    <key>HF_HUB_OFFLINE</key>
+    <string>1</string>
+    <key>UV_OFFLINE</key>
+    <string>1</string>
+    <key>UV_NO_SYNC</key>
+    <string>1</string>
+  </dict>
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key>
+    <integer>2</integer>
+    <key>Minute</key>
+    <integer>30</integer>
+  </dict>
+  <key>RunAtLoad</key>
+  <false/>
+  <key>ProcessType</key>
+  <string>Background</string>
+  <key>LowPriorityIO</key>
+  <true/>
+  <key>Umask</key>
+  <integer>63</integer>
+  <key>StandardOutPath</key>
+  <string>__HOME__/Library/Logs/idreader/backup.log</string>
+  <key>StandardErrorPath</key>
+  <string>__HOME__/Library/Logs/idreader/backup.err.log</string>
+</dict>
+</plist>

@@ -60,11 +60,16 @@ sudo pmset -a sleep 0 disksleep 0 displaysleep 10 autorestart 1 womp 1
 
 ## Sauvegardes
 
-- restic chaque nuit vers un disque externe chiffré : base SQLite (via `sqlite3 .backup`, jamais une copie à chaud du fichier), `data/batches/`, `data/golden/`, `.env`.
-- Rétention alignée sur `05_SECURITE_RGPD.md`.
-- Test de restauration une fois par trimestre.
+- restic chaque nuit vers un disque externe chiffré (`deploy/backup.sh`, LaunchAgent `fr.idreader.backup` à 2 h 30, après la purge de 2 h 00) : base SQLite (via `sqlite3 .backup`, jamais une copie à chaud du fichier), `data/batches/`, `data/golden/`, `.env`.
+- Rétention alignée sur `05_SECURITE_RGPD.md` : chaque famille d'instantanés est oubliée à sa durée de conservation + 7 jours.
+- Mise en place, restauration et test trimestriel : `deploy/BACKUP.md`.
+
+## Purge
+
+- `uv run idreader purge` (LaunchAgent `fr.idreader.purge`, chaque jour à 2 h 00) : images et artefacts au-delà de `retention_images_days`, lots et journal au-delà de `retention_data_days`, dossiers de débogage, sessions expirées, puis `VACUUM`. `--dry-run` pour compter sans supprimer, `--batch <id>` pour un lot entier.
+- Aussi depuis l'interface : Administration > Purge (simulation ou purge immédiate) et « Purger le lot » sur la page d'un lot (administrateurs).
 
 ## Supervision
 
 - Page Santé (`/admin/health`) : version de macOS, langues Vision, révisions des requêtes, modèles chargés, jobs en attente et en échec, espace disque, mémoire, date du dernier banc d'essai.
-- Alerte visible dans l'interface si la version de macOS diffère de celle du dernier banc d'essai.
+- Alerte visible dans l'interface (bandeau pour les administrateurs, page Santé) si la version de macOS diffère de celle du dernier banc d'essai lancé sous macOS (`bench/results/*.json`), ou si aucun banc n'a été lancé sur cette version.

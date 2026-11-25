@@ -1,10 +1,20 @@
+import { useQuery } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { Link } from "react-router";
 
+import { api } from "../api";
 import { useAuth } from "../auth";
 
 export function Layout({ children }: { children: ReactNode }) {
   const { me, signOut } = useAuth();
+  // Alerte « macOS a changé depuis le dernier banc » : pour les administrateurs, qui lancent le banc.
+  const health = useQuery({
+    queryKey: ["admin", "health"],
+    queryFn: api.health,
+    enabled: me?.role === "admin",
+    staleTime: 10 * 60_000,
+  });
+  const alert = health.data?.macos_alert;
   return (
     <div className="flex min-h-full flex-col">
       <header className="border-b border-slate-200 bg-white">
@@ -32,6 +42,13 @@ export function Layout({ children }: { children: ReactNode }) {
           </div>
         </div>
       </header>
+      {alert?.changed && (
+        <div role="alert" className="border-b border-amber-300 bg-amber-50">
+          <p className="mx-auto max-w-7xl px-4 py-2 text-sm text-amber-900">
+            {alert.message} <code className="rounded bg-amber-100 px-1">uv run idreader bench --set golden --compare last</code>
+          </p>
+        </div>
+      )}
       <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6">{children}</main>
     </div>
   );

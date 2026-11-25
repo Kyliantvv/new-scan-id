@@ -173,6 +173,38 @@ export interface Stats {
   avg_ms_per_document: number | null;
 }
 
+export interface MacosAlert {
+  current: string | null;
+  last_bench: { file: string; set: string; git: string | null; started_at: string; macos: string | null } | null;
+  changed: boolean;
+  message: string | null;
+}
+
+export interface Health {
+  version: string;
+  platform: string;
+  macos: string | null;
+  engines_mrz: string[];
+  engines_viz: string[];
+  queue: Record<string, number>;
+  disk_free_gb: number;
+  disk_total_gb: number;
+  macos_alert: MacosAlert;
+}
+
+export interface PurgeReport {
+  dry_run: boolean;
+  images_days: number;
+  data_days: number;
+  files_images_purged: number;
+  batches_deleted: number;
+  audit_entries_deleted: number;
+  jobs_deleted: number;
+  sessions_deleted: number;
+  debug_dirs_deleted: number;
+  batches_skipped_busy: number;
+}
+
 export class ApiError extends Error {
   constructor(
     readonly status: number,
@@ -268,6 +300,10 @@ export const api = {
     request<UserRow>("PATCH", `/api/admin/users/${encodeURIComponent(id)}`, patch),
   stats: (batch?: string) =>
     request<Stats>("GET", "/api/admin/stats" + (batch ? `?batch=${encodeURIComponent(batch)}` : "")),
+  health: () => request<Health>("GET", "/api/admin/health"),
+  purge: (dryRun: boolean) => request<PurgeReport>("POST", "/api/admin/purge", { dry_run: dryRun }),
+  purgeBatch: (batchId: string) =>
+    request<{ purged: boolean }>("POST", "/api/admin/purge", { batch_id: batchId }),
 };
 
 export const cropImageUrl = (id: string) => `/api/crops/${encodeURIComponent(id)}/image`;

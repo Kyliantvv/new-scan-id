@@ -29,7 +29,98 @@ export function AdminPage() {
       <StatsSection />
       <SettingsSection />
       <UsersSection />
+      <PurgeSection />
+      <HealthSection />
     </div>
+  );
+}
+
+function PurgeSection() {
+  const queryClient = useQueryClient();
+  const [error, setError] = useState<string | null>(null);
+  const run = useMutation({
+    mutationFn: (dryRun: boolean) => api.purge(dryRun),
+    onSuccess: (r) => {
+      setError(null);
+      if (!r.dry_run) void queryClient.invalidateQueries();
+    },
+    onError: (e) => setError(e instanceof ApiError ? e.message : "La purge n'a pas abouti."),
+  });
+  const r = run.data;
+  return (
+    <section className="space-y-3">
+      <h2 className="text-lg font-medium">Purge</h2>
+      <p className="text-sm text-slate-600">
+        Lancée chaque nuit. Supprime les images et artefacts plus anciens que la durée de conservation des images, puis les
+        lots, documents et entrées du journal plus anciens que celle des données. Le jeu de test n'est jamais touché.
+      </p>
+      <div className="flex flex-wrap gap-2 text-sm">
+        <button
+          type="button"
+          disabled={run.isPending}
+          onClick={() => run.mutate(true)}
+          className="rounded-md border border-slate-300 px-3 py-1.5 hover:bg-slate-100"
+        >
+          Simuler la purge
+        </button>
+        <button
+          type="button"
+          disabled={run.isPending}
+          onClick={() => {
+            if (window.confirm("Purger maintenant tout ce qui dépasse la durée de conservation ? Cette action est définitive."))
+              run.mutate(false);
+          }}
+          className="rounded-md border border-red-300 px-3 py-1.5 text-red-700 hover:bg-red-50"
+        >
+          Purger maintenant
+        </button>
+      </div>
+      {error && (
+        <p role="alert" className="text-sm text-red-700">
+          {error}
+        </p>
+      )}
+      {r && (
+        <p role="status" className="text-sm text-slate-700">
+          {r.dry_run ? "Simulation : " : "Purge faite : "}
+          {r.files_images_purged} fichier(s) sans image, {r.batches_deleted} lot(s) supprimé(s),{" "}
+          {r.audit_entries_deleted} entrée(s) du journal, {r.debug_dirs_deleted} dossier(s) de débogage
+          {r.batches_skipped_busy ? `, ${r.batches_skipped_busy} lot(s) en cours laissé(s) pour la prochaine fois` : ""}.
+        </p>
+      )}
+    </section>
+  );
+}
+
+function HealthSection() {
+  const health = useQuery({ queryKey: ["admin", "health"], queryFn: api.health });
+  const h = health.data;
+  if (!h) return null;
+  const bench = h.macos_alert.last_bench;
+  return (
+    <section className="space-y-3">
+      <h2 className="text-lg font-medium">Santé</h2>
+      {h.macos_alert.changed && (
+        <p role="alert" className="rounded bg-amber-50 px-3 py-2 text-sm text-amber-900">
+          {h.macos_alert.message}
+        </p>
+      )}
+      <Table
+        head={["Élément", "Valeur"]}
+        rows={[
+          ["Version d'IDReader", h.version],
+          ["macOS", h.macos ?? "— (pas macOS)"],
+          [
+            "Dernier banc sous macOS",
+            bench ? `${bench.started_at.slice(0, 10)} · ${bench.set} · macOS ${bench.macos ?? "?"}` : "aucun",
+          ],
+          ["Moteurs MRZ", h.engines_mrz.join(", ") || "aucun"],
+          ["Moteurs zone visuelle", h.engines_viz.join(", ") || "aucun"],
+          ["File de jobs", Object.entries(h.queue).map(([k, n]) => `${k} : ${n}`).join(" · ") || "vide"],
+          ["Disque libre", `${h.disk_free_gb} Go sur ${h.disk_total_gb} Go`],
+        ]}
+      />
+    </section>
   );
 }
 

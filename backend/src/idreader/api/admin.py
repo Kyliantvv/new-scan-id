@@ -9,7 +9,7 @@ from collections import Counter
 from datetime import datetime
 from typing import Annotated, Any, Literal
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Request
 from pydantic import BaseModel, Field
 from sqlalchemy import delete, func, select
 
@@ -17,7 +17,9 @@ from idreader import __version__
 from idreader.api.deps import AdminDep, DbDep, SettingsDep, api_error
 from idreader.core import app_settings, audit
 from idreader.core import models as m
+from idreader.core.purge import BatchBusyError, PurgeReport, purge_batch, purge_expired, vacuum
 from idreader.core.security import check_password_policy, create_user, hash_password
+from idreader.core.system import current_macos, macos_alert
 from idreader.pipeline.consolidate import REASON_LABELS
 
 log = logging.getLogger(__name__)
@@ -214,6 +216,48 @@ def stats(_auth: AdminDep, db: DbDep, batch: Annotated[str | None, Query()] = No
     )
 
 
+# --- Purge --------------------------------------------------------------------------------
+
+
+class PurgeIn(BaseModel):
+    batch_id: str | None = None  # None : purge selon la durée de conservation
+    dry_run: bool = False
+
+
+@router.post("/purge")
+def run_purge(
+    body: PurgeIn, auth: AdminDep, db: DbDep, settings: SettingsDep, request: Request
+) -> PurgeReport | dict[str, bool]:
+    conf = app_settings.load(db, settings)
+    if body.batch_id:
+        try:
+            found = purge_batch(
+                db, settings, body.batch_id, user_id=auth.user_id, dry_run=body.dry_run
+            )
+        except BatchBusyError as exc:
+            raise api_error(
+                409, "BATCH_BUSY", "Ce lot est en cours d'analyse : réessayez plus tard."
+            ) from exc
+        if not found:
+            raise api_error(404, "BATCH_NOT_FOUND", "Lot introuvable.")
+        db.commit()
+        if not body.dry_run:
+            vacuum(request.app.state.engine)
+        return {"purged": not body.dry_run}
+    report = purge_expired(
+        db,
+        settings,
+        images_days=conf.retention_images_days,
+        data_days=conf.retention_data_days,
+        user_id=auth.user_id,
+        dry_run=body.dry_run,
+    )
+    db.commit()
+    if report.rows_deleted:
+        vacuum(request.app.state.engine)
+    return report
+
+
 # --- Santé --------------------------------------------------------------------------------
 
 
@@ -232,4 +276,5 @@ def health(_auth: AdminDep, db: DbDep, settings: SettingsDep) -> dict[str, Any]:
         "queue": queue,
         "disk_free_gb": round(usage.free / 1e9, 1),
         "disk_total_gb": round(usage.total / 1e9, 1),
+        "macos_alert": macos_alert(current_macos(), settings.bench_results_dir).model_dump(),
     }

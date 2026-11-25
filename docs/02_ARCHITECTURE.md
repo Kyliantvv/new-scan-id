@@ -196,7 +196,7 @@ Package Swift dans `vision-helper/`, cible macOS 15 minimum, utilise les API de 
 | GET | `/crops/{id}/image` · `/pages/{id}/image` · `/files/{id}/original` | images (authentifiées, `Cache-Control: no-store`) |
 | POST | `/exports` (corps JSON : `format`, `batch`, `status`, `ids`, `columns`, `include_status`) | export |
 | GET | `/events?batch=` | SSE : progression des jobs |
-| GET/PUT | `/admin/settings` · CRUD `/admin/users` · GET `/admin/stats` · `/admin/health` · POST `/admin/purge` | administration |
+| GET/PUT | `/admin/settings` · CRUD `/admin/users` · GET `/admin/stats` · `/admin/health` (dont `macos_alert`) · POST `/admin/purge` (corps : `batch_id` facultatif, `dry_run`) | administration |
 
 Le front est servi par FastAPI (fichiers du build Vite) sur la même origine : pas de CORS.
 
@@ -261,5 +261,6 @@ HF_HUB_OFFLINE=1
 | AG Grid Community, ag-grid-react, @ag-grid-community/locale | tableau, traduction française | MIT |
 | react-zoom-pan-pinch | zoom | MIT |
 | Caddy | reverse proxy TLS | Apache-2.0 |
+| restic | sauvegardes chiffrées (outil, hors application) | BSD-2-Clause |
 
 > Vérifier chaque licence au moment de l'ajout (elles peuvent changer d'une version à l'autre) et mettre ce tableau à jour. Licences acceptées : MIT, BSD, Apache-2.0, ISC, MIT-CMU, PSF. LGPL seulement en bibliothèque dynamique non modifiée et documentée. GPL et AGPL interdites (d'où l'absence de `pillow-heif`, dont les wheels embarquent libheif, libde265 et x265). Le générateur de MRZ de test est écrit maison dans `scripts/` (la somme de contrôle tient en dix lignes).

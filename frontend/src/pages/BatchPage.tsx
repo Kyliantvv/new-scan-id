@@ -1,8 +1,9 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useMemo, useState } from "react";
-import { Link, useParams } from "react-router";
+import { Link, useNavigate, useParams } from "react-router";
 
 import { api, ApiError, uploadFile } from "../api";
+import { useAuth } from "../auth";
 import { DocumentsSection } from "../components/DocumentsSection";
 import { DropZone } from "../components/DropZone";
 import { FileList, type FileItem } from "../components/FileList";
@@ -28,6 +29,21 @@ export function BatchPage() {
     queryFn: () => api.listDocuments(batchId),
   });
   const { jobsByFile, connected } = useBatchEvents(batchId);
+  const { me } = useAuth();
+  const navigate = useNavigate();
+  const [purgeError, setPurgeError] = useState<string | null>(null);
+  const purgeBatch = async () => {
+    if (!window.confirm("Purger ce lot : fichiers, images, documents et données extraites ? Cette action est définitive."))
+      return;
+    setPurgeError(null);
+    try {
+      await api.purgeBatch(batchId);
+      await queryClient.invalidateQueries({ queryKey: ["batches"] });
+      navigate("/");
+    } catch (e) {
+      setPurgeError(e instanceof ApiError ? e.message : "La purge du lot n'a pas abouti.");
+    }
+  };
   const [pending, setPending] = useState<PendingUpload[]>([]);
 
   const update = useCallback((key: string, patch: Partial<PendingUpload>) => {
@@ -109,10 +125,26 @@ export function BatchPage() {
           </Link>{" "}
           / {batch.data?.name ?? ""}
         </h1>
-        <span className={`text-sm ${connected ? "text-emerald-700" : "text-slate-500"}`}>
-          {connected ? "Progression en direct" : "Connexion au suivi…"}
-        </span>
+        <div className="flex items-center gap-3 text-sm">
+          <span className={connected ? "text-emerald-700" : "text-slate-500"}>
+            {connected ? "Progression en direct" : "Connexion au suivi…"}
+          </span>
+          {me?.role === "admin" && (
+            <button
+              type="button"
+              onClick={() => void purgeBatch()}
+              className="rounded-md border border-red-300 px-3 py-1.5 text-red-700 hover:bg-red-50"
+            >
+              Purger le lot
+            </button>
+          )}
+        </div>
       </div>
+      {purgeError && (
+        <p role="alert" className="text-sm text-red-700">
+          {purgeError}
+        </p>
+      )}
       <DropZone onFiles={onFiles} />
       <FileList items={items} />
       <DocumentsSection batchId={batchId} rows={documents.data ?? []} />

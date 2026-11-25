@@ -64,6 +64,8 @@ class Settings(BaseSettings):
 
     tessdata_prefix: Path = Path("/opt/homebrew/share/tessdata")
     models_dir: Path = REPO_ROOT / "models"  # rempli par scripts/fetch_models.py
+    # Rapports du banc d'essai (alerte « macOS a changé depuis le dernier banc »)
+    bench_results_dir: Path = REPO_ROOT / "bench" / "results"
     tesseract_cmd: str = "tesseract"  # nom ou chemin du binaire Tesseract 5
     vlm_enabled: bool = False
     vlm_model: str = "mlx-community/PaddleOCR-VL-1.6-4bit"
